@@ -1,0 +1,61 @@
+{
+  "dataset_name": "Synthetic Dark Matter Detection Dataset",
+  "creation_date": "2025-10-10T17:27:24.880490",
+  "total_events": 50000,
+  "event_types": {
+    "Background": 45997,
+    "WIMP-like": 2520,
+    "Axion-like": 744,
+    "Sterile-Neutrino": 510,
+    "Primordial-BH": 229
+  },
+  "features": {
+    "energy_features": [
+      "recoil_energy_keV"
+    ],
+    "light_features": [
+      "s1_light_yield",
+      "s1_area_PE",
+      "s1_width_ns"
+    ],
+    "charge_features": [
+      "s2_charge_yield",
+      "s2_area_PE",
+      "s2_width_us"
+    ],
+    "position_features": [
+      "position_x_mm",
+      "position_y_mm",
+      "position_z_mm"
+    ],
+    "derived_features": [
+      "s2_over_s1_ratio",
+      "log10_s2_over_s1",
+      "drift_time_us"
+    ],
+    "detector_features": [
+      "detector_temp_K",
+      "gas_pressure_bar",
+      "electric_field_V_cm"
+    ],
+    "quality_features": [
+      "event_quality",
+      "pile_up_flag"
+    ]
+  },
+  "physics_parameters": {
+    "detector_radius_mm": 500,
+    "detector_height_mm": 1000,
+    "drift_velocity_mm_us": 1.33,
+    "er_light_yield_pe_kev": 2.5,
+    "nr_light_yield_pe_kev": 0.1,
+    "er_charge_yield_e_kev": 50,
+    "nr_charge_yield_e_kev": 2
+  },
+  "data_quality": {
+    "missing_s1_events": 14519,
+    "missing_s2_events": 50,
+    "missing_position_events": 250,
+    "pile_up_events": 990
+  }
+}
