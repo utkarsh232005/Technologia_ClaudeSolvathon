@@ -10,6 +10,7 @@ import DataGenerator from "./pages/DataGenerator";
 import EventClassifier from "./pages/EventClassifier";
 import ResultsDashboard from "./pages/ResultsDashboard";
 import ReportGenerator from "./pages/ReportGenerator";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
                 <Route path="/classifier" element={<EventClassifier />} />
                 <Route path="/results" element={<ResultsDashboard />} />
                 <Route path="/reports" element={<ReportGenerator />} />
+                <Route path="/settings" element={<Settings />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>

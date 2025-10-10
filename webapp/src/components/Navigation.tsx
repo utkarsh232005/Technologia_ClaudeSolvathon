@@ -2,7 +2,7 @@ import { Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Navigation = () => {
-  const navItems = ['Home', 'Classifier', 'Data Lab', 'Results', 'Reports'];
+  const navItems = ['Home', 'Classifier', 'Data Lab', 'Results', 'Reports', 'Settings'];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-background/30 border-b border-white/10">
