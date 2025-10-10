@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Zap, Download, RotateCcw } from 'lucide-react';
+import { Zap, Download, RotateCcw, Sparkles } from 'lucide-react';
 
 const DataGenerator = () => {
   const [config, setConfig] = useState({
@@ -130,75 +130,97 @@ const DataGenerator = () => {
       title="Data Generator"
       description="Generate synthetic WIMP interaction events with realistic detector responses"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <Card className="backdrop-blur-md bg-card/50 border-white/10">
-          <CardHeader>
-            <CardTitle className="section-heading">Event Configuration</CardTitle>
-            <CardDescription>Configure the parameters for synthetic event generation</CardDescription>
+      {/* Top section with Configuration and Statistics */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mb-8">
+        {/* Event Configuration - Left side (60%) */}
+        <Card className="lg:col-span-3 bg-[#1a1f2e] border-slate-600 shadow-lg rounded-xl border">
+          <CardHeader className="pb-6">
+            <div className="space-y-4 mb-5">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <CardTitle className="text-xl font-semibold text-white" style={{ textShadow: '0 0 15px rgba(34, 211, 238, 0.15)' }}>Event Configuration</CardTitle>
+              </div>
+              <div className="w-12 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"></div>
+              <CardDescription className="text-slate-400 text-sm leading-relaxed">Configure the parameters for synthetic event generation</CardDescription>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="numEvents">Number of Events</Label>
+          <CardContent className="space-y-8 p-7">
+            <div className="space-y-3">
+              <Label htmlFor="numEvents" className="text-slate-300 text-sm font-medium flex items-center gap-2">
+                Number of Events
+              </Label>
               <Input
                 id="numEvents"
                 type="number"
                 value={config.numEvents}
                 onChange={(e) => setConfig(prev => ({ ...prev, numEvents: parseInt(e.target.value) || 100 }))}
                 placeholder="100"
+                className="bg-[#0f172a] border-[1.5px] border-slate-600 text-white placeholder:text-slate-500 font-medium rounded-md px-4 py-3 focus:border-blue-500 focus:bg-slate-800 focus:ring-3 focus:ring-blue-500/10 transition-all duration-200"
               />
             </div>
             
-            <div>
-              <Label>Energy Range (keV)</Label>
-              <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="space-y-3">
+              <Label className="text-slate-300 text-sm font-medium">Energy Range (keV)</Label>
+              <div className="grid grid-cols-2 gap-4">
                 <Input
                   type="number"
                   value={config.energyMin}
                   onChange={(e) => setConfig(prev => ({ ...prev, energyMin: parseFloat(e.target.value) || 1 }))}
                   placeholder="Min"
+                  className="bg-[#0f172a] border-[1.5px] border-slate-600 text-white placeholder:text-slate-500 font-medium rounded-md px-4 py-3 focus:border-blue-500 focus:bg-slate-800 focus:ring-3 focus:ring-blue-500/10 transition-all duration-200"
                 />
                 <Input
                   type="number"
                   value={config.energyMax}
                   onChange={(e) => setConfig(prev => ({ ...prev, energyMax: parseFloat(e.target.value) || 50 }))}
                   placeholder="Max"
+                  className="bg-[#0f172a] border-[1.5px] border-slate-600 text-white placeholder:text-slate-500 font-medium rounded-md px-4 py-3 focus:border-blue-500 focus:bg-slate-800 focus:ring-3 focus:ring-blue-500/10 transition-all duration-200"
                 />
               </div>
             </div>
 
-            <div>
-              <Label>Event Type Distribution</Label>
-              <div className="space-y-2 mt-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">WIMP Events</span>
-                  <span className="text-sm font-mono">{Math.round(config.wimpRatio * 100)}%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Background Events</span>
-                  <span className="text-sm font-mono">{Math.round(config.backgroundRatio * 100)}%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm">Other Events</span>
-                  <span className="text-sm font-mono">{Math.round((1 - config.wimpRatio - config.backgroundRatio) * 100)}%</span>
-                </div>
+            <div className="space-y-4">
+              <Label className="text-slate-300 text-sm font-medium">Event Type Distribution</Label>
+              <div className="space-y-4 bg-slate-800/50 rounded-lg p-5 border border-slate-700">
+                {[
+                  { name: 'WIMP Events', percentage: Math.round(config.wimpRatio * 100), color: 'from-purple-600 to-purple-400' },
+                  { name: 'Background Events', percentage: Math.round(config.backgroundRatio * 100), color: 'from-blue-600 to-blue-400' },
+                  { name: 'Other Events', percentage: Math.round((1 - config.wimpRatio - config.backgroundRatio) * 100), color: 'from-cyan-600 to-cyan-400' }
+                ].map((item, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-300 text-sm">{item.name}</span>
+                      <span className="text-cyan-400 text-base font-semibold" style={{ textShadow: '0 0 10px rgba(34, 211, 238, 0.3)' }}>{item.percentage}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full bg-gradient-to-r ${item.color} transition-all duration-700 ease-out`}
+                        style={{ width: `${item.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-4 pt-2">
               <Button 
                 onClick={generateSyntheticData}
                 disabled={isGenerating}
-                variant="premium"
-                className="w-full group"
+                className="w-full bg-gradient-to-r from-purple-600 via-purple-500 to-blue-600 hover:from-purple-700 hover:via-purple-600 hover:to-blue-700 text-white font-semibold text-base py-4 px-6 rounded-lg shadow-[0_4px_12px_rgba(139,92,246,0.25)] hover:shadow-[0_6px_20px_rgba(139,92,246,0.35)] hover:scale-[1.02] hover:brightness-105 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] group relative overflow-hidden"
+                style={{
+                  backgroundSize: '200% 100%',
+                  backgroundPosition: isGenerating ? '100% 0' : '0% 0'
+                }}
               >
                 {isGenerating ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
                     Generating...
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
+                    <Sparkles className="w-5 h-5 mr-3 transition-transform duration-300 group-hover:rotate-12" />
                     Generate Events
                   </>
                 )}
@@ -207,10 +229,9 @@ const DataGenerator = () => {
               {generatedData.length > 0 && (
                 <Button
                   onClick={resetData}
-                  variant="outline"
-                  className="w-full"
+                  className="w-full bg-transparent border-[1.5px] border-slate-500 text-slate-300 hover:border-slate-400 hover:bg-slate-700/30 hover:text-slate-200 py-4 px-6 rounded-lg font-semibold transition-all duration-300 ease-out group"
                 >
-                  <RotateCcw className="w-4 h-4 mr-2" />
+                  <RotateCcw className="w-5 h-5 mr-3 transition-transform duration-300 group-hover:rotate-180" />
                   Reset Data
                 </Button>
               )}
@@ -218,54 +239,74 @@ const DataGenerator = () => {
           </CardContent>
         </Card>
 
-        <Card className="backdrop-blur-md bg-card/50 border-white/10">
-          <CardHeader>
-            <CardTitle className="section-heading">Generation Statistics</CardTitle>
-            <CardDescription>Overview of generated event data</CardDescription>
+        {/* Generation Statistics - Right side (40%) */}
+        <Card className="lg:col-span-2 bg-[#1a1f2e] border-slate-600 shadow-lg rounded-xl border">
+          <CardHeader className="pb-6">
+            <div className="space-y-4 mb-5">
+              <div className="flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-cyan-400" />
+                <CardTitle className="text-xl font-semibold text-white" style={{ textShadow: '0 0 15px rgba(34, 211, 238, 0.15)' }}>Generation Statistics</CardTitle>
+              </div>
+              <div className="w-12 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"></div>
+              <CardDescription className="text-slate-400 text-sm leading-relaxed">Overview of generated event data</CardDescription>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-7">
             {generatedData.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-muted/10 rounded-lg">
-                    <div className="text-2xl font-bold text-primary">{generatedData.length}</div>
-                    <div className="text-sm text-muted-foreground">Total Events</div>
+              <div className="space-y-8">
+                <div className="grid grid-cols-1 gap-6">
+                  <div className="text-center p-8 bg-slate-800/50 rounded-xl border border-slate-700 shadow-inner">
+                    <div 
+                      className="text-6xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-3"
+                      style={{ textShadow: '0 0 20px rgba(34, 211, 238, 0.2)' }}
+                    >
+                      {generatedData.length}
+                    </div>
+                    <div className="text-slate-400 text-xs uppercase tracking-wider font-medium">Total Events</div>
                   </div>
-                  <div className="text-center p-3 bg-muted/10 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-400">
+                  <div className="text-center p-8 bg-slate-800/50 rounded-xl border border-slate-700 shadow-inner">
+                    <div 
+                      className="text-6xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent mb-3"
+                      style={{ textShadow: '0 0 20px rgba(34, 211, 238, 0.2)' }}
+                    >
                       {generatedData.filter(e => e.type === 'WIMP').length}
                     </div>
-                    <div className="text-sm text-muted-foreground">WIMP Candidates</div>
+                    <div className="text-slate-400 text-xs uppercase tracking-wider font-medium">WIMP Candidates</div>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold">Event Type Breakdown:</div>
-                  {['WIMP', 'Background', 'Axion', 'Neutrino'].map(type => {
-                    const count = generatedData.filter(e => e.type === type).length;
-                    const percentage = Math.round((count / generatedData.length) * 100);
-                    return (
-                      <div key={type} className="flex items-center justify-between text-sm">
-                        <span>{type}</span>
-                        <span className="font-mono">{count} ({percentage}%)</span>
-                      </div>
-                    );
-                  })}
+                <div className="space-y-4">
+                  <div className="text-sm font-semibold text-white mb-4">Event Type Breakdown:</div>
+                  <div className="space-y-4">
+                    {['WIMP', 'Background', 'Axion', 'Neutrino'].map(type => {
+                      const count = generatedData.filter(e => e.type === type).length;
+                      const percentage = Math.round((count / generatedData.length) * 100);
+                      return (
+                        <div key={type} className="flex items-center justify-between text-sm py-2 border-b border-slate-700/50 last:border-b-0" style={{ lineHeight: '1.8' }}>
+                          <span className="text-slate-300 font-medium">{type}</span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-white font-semibold">{count}</span>
+                            <span className="text-gray-500">•</span>
+                            <span className="text-cyan-400 font-medium">({percentage}%)</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
 
                 <Button
                   onClick={() => handleExport(generatedData)}
-                  variant="outline"
-                  className="w-full group"
+                  className="w-full bg-transparent border-[1.5px] border-blue-500 text-blue-400 hover:bg-blue-900/20 hover:border-blue-400 hover:text-blue-300 py-4 px-6 rounded-lg font-semibold transition-all duration-300 ease-out group"
                 >
-                  <Download className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
+                  <Download className="w-5 h-5 mr-3 transition-transform duration-300 group-hover:translate-y-1" />
                   Export All Data
                 </Button>
               </div>
             ) : (
-              <div className="text-center text-muted-foreground py-8">
-                <Zap className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>Generate events to see statistics</p>
+              <div className="text-center text-slate-400 py-16">
+                <Zap className="w-20 h-20 mx-auto mb-6 opacity-20" />
+                <p className="text-sm font-medium">Generate events to see statistics</p>
               </div>
             )}
           </CardContent>
