@@ -234,30 +234,34 @@ export const DataTable = ({
 
   return (
     <>
-    <Card className="backdrop-blur-md bg-card/50 border-white/10">
+    <Card className="data-table-container">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>{title}</CardTitle>
+          <CardTitle className="section-heading">
+            <Search className="icon" />
+            {title}
+          </CardTitle>
           <div className="flex items-center gap-2">
             {selectedRows.size > 0 && (
-              <Button size="sm" onClick={handleExport} className="bg-green-600 hover:bg-green-700">
+              <Button size="sm" onClick={handleExport} className="bg-green-600 hover:bg-green-700 transition-all duration-200">
                 <Download className="w-4 h-4 mr-2" />
                 Export Selected ({selectedRows.size})
               </Button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" className="border-slate-600 hover:bg-slate-700">
                   <Settings2 className="w-4 h-4 mr-2" />
                   Columns
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-slate-800 border-slate-600">
                 {columns.slice(0, -1).map(column => (
                   <DropdownMenuCheckboxItem
                     key={column.key}
                     checked={visibleColumns[column.key as keyof typeof visibleColumns]}
                     onCheckedChange={() => toggleColumnVisibility(column.key)}
+                    className="text-slate-300"
                   >
                     {column.label}
                   </DropdownMenuCheckboxItem>
@@ -269,22 +273,22 @@ export const DataTable = ({
       </CardHeader>
       <CardContent>
         {/* Controls */}
-        <div className="flex items-center justify-between mb-4 gap-4">
+        <div className="flex items-center justify-between mb-6 gap-4">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Search events..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 border-slate-600 bg-slate-800 text-white placeholder:text-slate-400"
               />
             </div>
             <Select value={density} onValueChange={(value: Density) => setDensity(value)}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-32 border-slate-600 bg-slate-800">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-800 border-slate-600">
                 <SelectItem value="comfortable">Comfortable</SelectItem>
                 <SelectItem value="compact">Compact</SelectItem>
                 <SelectItem value="dense">Dense</SelectItem>
@@ -293,15 +297,15 @@ export const DataTable = ({
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Rows per page:</span>
+            <span className="text-sm text-slate-400">Rows per page:</span>
             <Select value={pageSize.toString()} onValueChange={(value) => {
               setPageSize(parseInt(value));
               setCurrentPage(1);
             }}>
-              <SelectTrigger className="w-20">
+              <SelectTrigger className="w-20 border-slate-600 bg-slate-800">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-slate-800 border-slate-600">
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
                 <SelectItem value="50">50</SelectItem>
@@ -312,21 +316,22 @@ export const DataTable = ({
         </div>
 
         {/* Table */}
-        <div className="border border-white/10 rounded-lg overflow-hidden">
+        <div className="border border-slate-600 rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="border-white/10 hover:bg-muted/5">
-                <TableHead className="w-12">
+              <TableRow className="data-table-header border-slate-600 hover:bg-slate-800/30">
+                <TableHead className="w-12 data-table-header">
                   <Checkbox
                     checked={selectedRows.size === paginatedData.length && paginatedData.length > 0}
                     onCheckedChange={handleSelectAll}
+                    className="border-slate-500"
                   />
                 </TableHead>
                 {columns.map(column => 
                   visibleColumns[column.key as keyof typeof visibleColumns] && (
                     <TableHead 
                       key={column.key} 
-                      className={`${column.sortable ? 'cursor-pointer hover:bg-muted/10' : ''} select-none`}
+                      className={`data-table-header ${column.sortable ? 'cursor-pointer hover:bg-slate-700/30 transition-colors' : ''} select-none`}
                       onClick={() => column.sortable && handleSort(column.key as SortField)}
                     >
                       <div className="flex items-center gap-2">
@@ -394,19 +399,20 @@ export const DataTable = ({
                 paginatedData.map((event, index) => (
                 <TableRow 
                   key={event.id} 
-                  className={`border-white/10 hover:bg-muted/10 transition-colors ${
-                    index % 2 === 1 ? 'bg-muted/5' : ''
-                  } ${selectedRows.has(event.id) ? 'bg-primary/10' : ''}`}
+                  className={`data-table-row ${
+                    index % 2 === 1 ? 'bg-slate-800/20' : ''
+                  } ${selectedRows.has(event.id) ? 'bg-blue-600/20' : ''}`}
                 >
                   <TableCell className={densityClasses[density]}>
                     <Checkbox
                       checked={selectedRows.has(event.id)}
                       onCheckedChange={(checked) => handleSelectRow(event.id, checked as boolean)}
+                      className="border-slate-500"
                     />
                   </TableCell>
                   
                   {visibleColumns.id && (
-                    <TableCell className={`font-mono text-sm ${densityClasses[density]}`}>
+                    <TableCell className={`font-mono text-sm font-medium text-white ${densityClasses[density]}`}>
                       {event.id}
                     </TableCell>
                   )}
@@ -438,8 +444,7 @@ export const DataTable = ({
                   {visibleColumns.type && (
                     <TableCell className={densityClasses[density]}>
                       <Badge 
-                        variant="outline" 
-                        className={typeColors[event.type as keyof typeof typeColors] || 'bg-muted text-muted-foreground'}
+                        className={`confidence-tag ${event.type.toLowerCase()}`}
                       >
                         {event.type}
                       </Badge>
@@ -449,10 +454,10 @@ export const DataTable = ({
                   {visibleColumns.confidence && (
                     <TableCell className={densityClasses[density]}>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm">{event.confidence}%</span>
-                        <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                        <span className="font-mono text-sm text-white">{event.confidence}%</span>
+                        <div className="confidence-progress w-16">
                           <div 
-                            className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
+                            className="confidence-progress-fill bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
                             style={{ width: `${event.confidence}%` }}
                           />
                         </div>
@@ -462,30 +467,30 @@ export const DataTable = ({
                   
                   {visibleColumns.actions && (
                     <TableCell className={densityClasses[density]}>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-2">
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => handleViewEvent(event)}
-                          className="h-8 w-8 p-0"
+                          className="h-8 w-8 p-0 hover:bg-slate-700"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="action-icon" />
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => onEdit?.(event)}
-                          className="h-8 w-8 p-0"
+                          className="h-8 w-8 p-0 hover:bg-slate-700"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="action-icon" />
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           onClick={() => onFlag?.(event)}
-                          className="h-8 w-8 p-0 text-orange-400 hover:text-orange-300"
+                          className="h-8 w-8 p-0 hover:bg-slate-700"
                         >
-                          <Flag className="w-4 h-4" />
+                          <Flag className="action-icon" />
                         </Button>
                       </div>
                     </TableCell>
@@ -498,8 +503,8 @@ export const DataTable = ({
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between mt-4">
-          <div className="text-sm text-muted-foreground">
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-600">
+          <div className="text-sm text-slate-400">
             Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredAndSortedData.length)} of {filteredAndSortedData.length} entries
             {searchTerm && ` (filtered from ${data.length} total)`}
           </div>
@@ -510,6 +515,7 @@ export const DataTable = ({
               size="sm"
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
+              className="border-slate-600 hover:bg-slate-700 disabled:opacity-50"
             >
               <ChevronsLeft className="w-4 h-4" />
             </Button>
@@ -518,11 +524,12 @@ export const DataTable = ({
               size="sm"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
+              className="border-slate-600 hover:bg-slate-700 disabled:opacity-50"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             
-            <span className="text-sm text-muted-foreground px-2">
+            <span className="text-sm text-slate-300 px-3 py-1 bg-slate-800 rounded font-mono">
               Page {currentPage} of {totalPages}
             </span>
             
@@ -531,6 +538,7 @@ export const DataTable = ({
               size="sm"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
+              className="border-slate-600 hover:bg-slate-700 disabled:opacity-50"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -539,6 +547,7 @@ export const DataTable = ({
               size="sm"
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
+              className="border-slate-600 hover:bg-slate-700 disabled:opacity-50"
             >
               <ChevronsRight className="w-4 h-4" />
             </Button>

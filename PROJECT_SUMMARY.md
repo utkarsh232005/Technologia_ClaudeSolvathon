@@ -81,7 +81,7 @@ def generate_detailed_explanation(event_data, classification_result):
 ### Step 1: Add Your API Key
 ```powershell
 notepad .env
-# Add: GEMINI_API_KEY=your_actual_api_key
+# Add: GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
 
 ### Step 2: Run Classification

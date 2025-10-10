@@ -90,7 +90,7 @@ Each explanation includes 7 comprehensive sections:
 Required in `.env` file:
 
 ```env
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
 
 Get your key from: https://makersuite.google.com/app/apikey

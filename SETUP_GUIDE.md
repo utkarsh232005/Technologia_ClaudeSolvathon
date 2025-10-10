@@ -54,7 +54,7 @@ notepad .env
 Replace `YOUR_GEMINI_API_KEY_HERE` with your actual API key:
 
 ```env
-GEMINI_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
 
 **⚠️ Important:** Never commit the `.env` file! It's already in `.gitignore`.

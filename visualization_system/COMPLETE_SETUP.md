@@ -75,7 +75,7 @@ python visualizer.py
 cd visualization_system
 
 # Step 1: Ensure API key is set in ../.env
-# GEMINI_API_KEY=your_actual_key_here
+# GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 
 # Step 2: Classify events with feature importance
 python mainClassify.py --num-events 20

@@ -42,6 +42,8 @@ const ReportGenerator = () => {
   const [generationProgress, setGenerationProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
   const [reportGenerated, setReportGenerated] = useState(false);
+  const [generatedReportContent, setGeneratedReportContent] = useState('');
+  const [lastGeneratedConfig, setLastGeneratedConfig] = useState<ReportConfig | null>(null);
 
   const reportTypes = [
     { id: 'executive', label: 'Executive Summary', description: 'High-level overview for stakeholders' },
@@ -100,6 +102,7 @@ const ReportGenerator = () => {
     setIsGenerating(true);
     setGenerationProgress(0);
     setReportGenerated(false);
+    setGeneratedReportContent('');
 
     const steps = [
       { label: 'Analyzing dataset...', duration: 1500 },
@@ -114,9 +117,83 @@ const ReportGenerator = () => {
       await new Promise(resolve => setTimeout(resolve, steps[i].duration));
     }
 
+    // Generate and store the report content
+    const reportContent = generateMarkdownPreview();
+    setGeneratedReportContent(reportContent);
+    setLastGeneratedConfig({ ...config });
+    
     setGenerationProgress(100);
     setIsGenerating(false);
     setReportGenerated(true);
+    
+    // Show success message
+    showToast.success("Report Generated Successfully!", "Your analysis report is ready for download.");
+  };
+
+  const downloadReport = () => {
+    if (!generatedReportContent) {
+      showToast.error("No Report to Download", "Please generate a report first.");
+      return;
+    }
+
+    const reportTypeTitle = reportTypes.find(t => t.id === config.type)?.label || 'Report';
+    const timestamp = new Date().toISOString().split('T')[0];
+    let filename = `${reportTypeTitle.replace(/\s+/g, '_')}_${timestamp}`;
+    let content = generatedReportContent;
+    let mimeType = 'text/plain';
+
+    // Handle different file formats
+    switch (config.format) {
+      case 'pdf':
+        filename += '.pdf';
+        // For a real implementation, you would convert markdown to PDF here
+        // For now, we'll download as text with PDF extension
+        mimeType = 'application/pdf';
+        break;
+      case 'markdown':
+        filename += '.md';
+        mimeType = 'text/markdown';
+        break;
+      case 'latex':
+        filename += '.tex';
+        // Convert markdown to basic LaTeX format
+        content = convertToLatex(generatedReportContent);
+        mimeType = 'application/x-latex';
+        break;
+      default:
+        filename += '.txt';
+    }
+
+    // Create and download the file
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    showToast.success("Download Started", `${filename} is being downloaded.`);
+  };
+
+  const convertToLatex = (markdown: string): string => {
+    // Basic markdown to LaTeX conversion
+    return markdown
+      .replace(/^# (.*$)/gim, '\\section{$1}')
+      .replace(/^## (.*$)/gim, '\\subsection{$1}')
+      .replace(/^### (.*$)/gim, '\\subsubsection{$1}')
+      .replace(/\*\*(.*?)\*\*/g, '\\textbf{$1}')
+      .replace(/\*(.*?)\*/g, '\\textit{$1}')
+      .replace(/^---$/gm, '\\hrule')
+      .replace(/^\* (.*$)/gim, '\\item $1')
+      .replace(/^\d+\. (.*$)/gim, '\\item $1');
+  };
+
+  const hasConfigChanged = (): boolean => {
+    if (!lastGeneratedConfig) return false;
+    return JSON.stringify(config) !== JSON.stringify(lastGeneratedConfig);
   };
 
   const generateMarkdownPreview = () => {
@@ -307,219 +384,285 @@ ${selectedSections.includes('Proposed Follow-ups') ? 'The proposed follow-up pro
   };
 
   return (
-    <PageLayout
-      title="Report Generator"
-      description="Generate comprehensive analysis reports for your detection data"
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Configuration Panel (Left) */}
-        <Card className="backdrop-blur-md bg-card/50 border-white/10">
-          <CardHeader>
-            <CardTitle>Report Configuration</CardTitle>
-            <CardDescription>Customize your analysis report settings</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Quick Start Templates */}
-            <div>
-              <Label className="text-sm font-semibold mb-3 block">Quick Start Templates</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {quickStartTemplates.map((template) => (
-                  <Button
-                    key={template.name}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => loadTemplate(template)}
-                    className="flex flex-col items-center gap-1 h-auto py-3 border-white/10 hover:bg-white/5"
-                  >
-                    <template.icon className="w-4 h-4" />
-                    <span className="text-xs">{template.name}</span>
-                  </Button>
-                ))}
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950">
+      {/* Page Header */}
+      <div className="max-w-7xl mx-auto px-8 pt-12 pb-8">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-white via-cyan-300 to-blue-400 bg-clip-text text-transparent mb-2" 
+              style={{ 
+                textShadow: '0 0 20px rgba(34, 211, 238, 0.25)',
+                letterSpacing: '0.5px'
+              }}>
+            Report Generator
+          </h1>
+          <p className="text-base text-gray-400 leading-relaxed max-w-2xl mx-auto">
+            Generate comprehensive analysis reports for your detection data with advanced visualization and insights
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-[1600px] mx-auto">
+          {/* Configuration Panel (Left) */}
+          <div className="bg-slate-900/80 border border-slate-600 rounded-2xl p-9 shadow-lg">
+            <div className="space-y-7">
+              {/* Quick Start Templates */}
+              <div>
+                <div className="flex items-center mb-4">
+                  <div className="w-0.5 h-8 bg-gradient-to-b from-purple-500 to-cyan-500 rounded-full mr-3.5"></div>
+                  <h3 className="text-base font-semibold text-white">Quick Start Templates</h3>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {quickStartTemplates.map((template) => (
+                    <button
+                      key={template.name}
+                      onClick={() => loadTemplate(template)}
+                      className="bg-slate-800/80 border-[1.5px] border-slate-600 rounded-lg p-5 text-center transition-all duration-300 ease-out hover:bg-blue-600/15 hover:border-blue-500 hover:-translate-y-1 hover:shadow-lg hover:shadow-blue-500/25 group"
+                    >
+                      <template.icon className="w-6 h-6 text-cyan-400 mx-auto mb-3 transition-all duration-200 group-hover:scale-110 group-hover:text-cyan-300" />
+                      <span className="text-sm font-medium text-white">{template.name}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Report Type */}
-            <div>
-              <Label className="text-sm font-semibold mb-3 block">Report Type</Label>
-              <RadioGroup value={config.type} onValueChange={(value) => updateConfig('type', value)}>
-                {reportTypes.map((type) => (
-                  <div key={type.id} className="flex items-start space-x-3 space-y-0">
-                    <RadioGroupItem value={type.id} id={type.id} className="mt-1" />
-                    <div className="grid gap-1.5 leading-none">
-                      <Label htmlFor={type.id} className="text-sm font-medium cursor-pointer">
-                        {type.label}
-                      </Label>
-                      <p className="text-xs text-muted-foreground">{type.description}</p>
+              {/* Report Type */}
+              <div>
+                <div className="flex items-center mb-4">
+                  <div className="w-0.5 h-8 bg-gradient-to-b from-purple-500 to-cyan-500 rounded-full mr-3.5"></div>
+                  <h3 className="text-base font-semibold text-white">Report Type</h3>
+                </div>
+                <div className="space-y-3">
+                  {reportTypes.map((type) => (
+                    <div
+                      key={type.id}
+                      onClick={() => updateConfig('type', type.id)}
+                      className={`bg-slate-800/60 border-[1.5px] rounded-lg p-4 cursor-pointer transition-all duration-250 hover:bg-slate-800/80 hover:border-blue-500 hover:translate-x-0.5 ${
+                        config.type === type.id
+                          ? 'bg-blue-600/12 border-blue-500 border-2 shadow-[0_0_0_3px_rgba(59,130,246,0.1)]'
+                          : 'border-slate-600'
+                      }`}
+                    >
+                      <div className="flex items-start space-x-4">
+                        <div className="relative mt-1">
+                          <div className={`w-5 h-5 rounded-full border-2 transition-all duration-250 ${
+                            config.type === type.id
+                              ? 'border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.15)]'
+                              : 'border-slate-500'
+                          }`}>
+                            {config.type === type.id && (
+                              <div className="absolute inset-1 rounded-full bg-gradient-to-br from-purple-600 to-cyan-500"></div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-base font-semibold text-white mb-1">{type.label}</h4>
+                          <p className="text-sm text-slate-300">{type.description}</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
+                  ))}
+                </div>
+              </div>
 
-            {/* Sections to Include */}
-            <div>
-              <Label className="text-sm font-semibold mb-3 block">Sections to Include</Label>
-              <div className="space-y-3">
-                {sectionOptions.map((section) => (
-                  <div key={section.id} className="flex items-start space-x-3">
-                    <Checkbox
-                      id={section.id}
-                      checked={config.sections[section.id]}
-                      onCheckedChange={(checked) => updateSection(section.id, checked as boolean)}
-                      className="mt-1"
+              {/* Sections to Include */}
+              <div>
+                <div className="flex items-center mb-4">
+                  <div className="w-0.5 h-8 bg-gradient-to-b from-purple-500 to-cyan-500 rounded-full mr-3.5"></div>
+                  <h3 className="text-base font-semibold text-white">Sections to Include</h3>
+                </div>
+                <div className="space-y-2.5">
+                  {sectionOptions.map((section) => (
+                    <div key={section.id} className="flex items-start space-x-3 group">
+                      <div className="relative mt-1">
+                        <input
+                          type="checkbox"
+                          id={section.id}
+                          checked={config.sections[section.id]}
+                          onChange={(e) => updateSection(section.id, e.target.checked)}
+                          className="w-5 h-5 rounded border-2 border-slate-500 bg-transparent cursor-pointer transition-all duration-250 checked:bg-gradient-to-br checked:from-purple-600 checked:to-blue-600 checked:border-blue-500 checked:shadow-[0_0_0_3px_rgba(59,130,246,0.12)] hover:border-blue-500"
+                        />
+                        {config.sections[section.id] && (
+                          <svg className="absolute inset-0 w-5 h-5 text-white pointer-events-none" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <label htmlFor={section.id} className="flex-1 cursor-pointer">
+                        <div className="text-sm font-medium text-white mb-0.5 group-hover:text-slate-100 transition-colors duration-200">
+                          {section.label}
+                        </div>
+                        <p className="text-xs text-slate-400">{section.description}</p>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Output Format */}
+              <div>
+                <div className="flex items-center mb-3">
+                  <div className="w-0.5 h-8 bg-gradient-to-b from-purple-500 to-cyan-500 rounded-full mr-3.5"></div>
+                  <h3 className="text-base font-semibold text-white">Output Format</h3>
+                </div>
+                <select
+                  value={config.format}
+                  onChange={(e) => updateConfig('format', e.target.value)}
+                  className="w-full bg-slate-900 border-[1.5px] border-slate-600 rounded-lg h-12 px-4 text-white text-sm font-medium cursor-pointer transition-all duration-200 focus:border-blue-500 focus:bg-slate-800 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] focus:outline-none hover:border-slate-500"
+                >
+                  <option value="pdf" className="bg-slate-800 text-slate-200">PDF Document</option>
+                  <option value="markdown" className="bg-slate-800 text-slate-200">Markdown File</option>
+                  <option value="latex" className="bg-slate-800 text-slate-200">LaTeX Source</option>
+                </select>
+              </div>
+
+              {/* Date Range */}
+              <div>
+                <div className="flex items-center mb-3">
+                  <div className="w-0.5 h-8 bg-gradient-to-b from-purple-500 to-cyan-500 rounded-full mr-3.5"></div>
+                  <h3 className="text-base font-semibold text-white">Date Range for Events</h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-slate-300 mb-1.5 block">Start Date</label>
+                    <input
+                      type="date"
+                      value={config.startDate}
+                      onChange={(e) => updateConfig('startDate', e.target.value)}
+                      className="w-full bg-slate-900 border-[1.5px] border-slate-600 rounded-lg h-12 px-4 text-white text-sm transition-all duration-200 focus:border-blue-500 focus:bg-slate-800 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] focus:outline-none"
                     />
-                    <div className="grid gap-1.5 leading-none">
-                      <Label htmlFor={section.id} className="text-sm font-medium cursor-pointer">
-                        {section.label}
-                      </Label>
-                      <p className="text-xs text-muted-foreground">{section.description}</p>
-                    </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Output Format */}
-            <div>
-              <Label className="text-sm font-semibold mb-2 block">Output Format</Label>
-              <Select value={config.format} onValueChange={(value) => updateConfig('format', value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pdf">PDF Document</SelectItem>
-                  <SelectItem value="markdown">Markdown File</SelectItem>
-                  <SelectItem value="latex">LaTeX Source</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Date Range */}
-            <div>
-              <Label className="text-sm font-semibold mb-2 block">Date Range for Events</Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="startDate" className="text-xs text-muted-foreground">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={config.startDate}
-                    onChange={(e) => updateConfig('startDate', e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="endDate" className="text-xs text-muted-foreground">End Date</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={config.endDate}
-                    onChange={(e) => updateConfig('endDate', e.target.value)}
-                  />
+                  <div>
+                    <label className="text-xs font-medium text-slate-300 mb-1.5 block">End Date</label>
+                    <input
+                      type="date"
+                      value={config.endDate}
+                      onChange={(e) => updateConfig('endDate', e.target.value)}
+                      className="w-full bg-slate-900 border-[1.5px] border-slate-600 rounded-lg h-12 px-4 text-white text-sm transition-all duration-200 focus:border-blue-500 focus:bg-slate-800 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Generate Button */}
-            <Button
-              onClick={generateReport}
-              disabled={isGenerating}
-              className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
-            >
-              {isGenerating ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                  Generating...
-                </>
-              ) : (
-                <>
-                  <FileText className="w-4 h-4 mr-2" />
-                  Generate Report
-                </>
+              {/* Generate Button */}
+              <div className="mt-8">
+                {reportGenerated && hasConfigChanged() && (
+                  <div className="mb-3 p-2 bg-yellow-600/20 border border-yellow-600/30 rounded-lg text-center">
+                    <p className="text-sm text-yellow-300">
+                      ⚠️ Configuration changed since last report
+                    </p>
+                  </div>
+                )}
+                <button
+                  onClick={generateReport}
+                  disabled={isGenerating}
+                  className="w-full h-[52px] bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white text-base font-semibold rounded-lg transition-all duration-300 cubic-bezier(0.4, 0, 0.2, 1) hover:scale-[1.02] hover:-translate-y-0.5 hover:shadow-[0_8px_28px_rgba(139,92,246,0.55)] hover:brightness-110 active:scale-[0.98] disabled:opacity-80 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0 shadow-[0_4px_16px_rgba(139,92,246,0.4)] group relative overflow-hidden"
+                >
+                  {isGenerating && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 via-indigo-600/20 to-blue-600/20 animate-pulse"></div>
+                  )}
+                  <div className="relative flex items-center justify-center">
+                    {isGenerating ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-3" />
+                        Generating Report...
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="w-5 h-5 mr-3 transition-transform duration-300 group-hover:translate-x-1" />
+                        {reportGenerated && hasConfigChanged() ? 'Regenerate Report' : 'Generate Report'}
+                      </>
+                    )}
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Preview Panel (Right) */}
+          <div className="bg-slate-900/80 border border-slate-600 rounded-2xl p-9 shadow-lg min-h-[600px]">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-xl font-semibold text-white mb-2">Report Preview</h2>
+                <p className="text-sm text-slate-400">Live preview of your generated report</p>
+              </div>
+              {reportGenerated && (
+                <button 
+                  onClick={downloadReport}
+                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200 flex items-center shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Report
+                </button>
               )}
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Preview Panel (Right) */}
-        <Card className="backdrop-blur-md bg-card/50 border-white/10">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Report Preview</CardTitle>
-              <CardDescription>Live preview of your generated report</CardDescription>
             </div>
-            {reportGenerated && (
-              <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                <Download className="w-4 h-4 mr-2" />
-                Download Report
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <div className="border border-white/10 rounded-lg p-4 h-96 overflow-y-auto bg-background/30">
+
+            <div className="border border-slate-600 rounded-lg p-6 min-h-[500px] overflow-y-auto bg-slate-900/30 custom-scrollbar">
               {isGenerating || reportGenerated ? (
                 <div className="prose prose-invert prose-sm max-w-none">
-                  <ReactMarkdown>{generateMarkdownPreview()}</ReactMarkdown>
+                  <ReactMarkdown>{reportGenerated ? generatedReportContent : generateMarkdownPreview()}</ReactMarkdown>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  <div className="text-center">
-                    <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                    <p>Configure your report settings and click "Generate Report" to see preview</p>
+                <div className="flex items-center justify-center h-full text-slate-500">
+                  <div className="text-center max-w-xs">
+                    <FileText className="w-20 h-20 mx-auto mb-4 opacity-50 text-slate-500" />
+                    <p className="text-sm">Configure your report settings and click "Generate Report" to see preview</p>
                   </div>
                 </div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
 
-      {/* Generation Progress */}
-      {isGenerating && (
-        <Card className="backdrop-blur-md bg-card/50 border-white/10 mt-6">
-          <CardContent className="pt-6">
+        {/* Generation Progress */}
+        {isGenerating && (
+          <div className="bg-slate-900/80 border border-slate-600 rounded-2xl p-6 mt-8 max-w-[1600px] mx-auto">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Generation Progress</span>
-                <span className="text-sm text-muted-foreground">{Math.round(generationProgress)}%</span>
+                <span className="text-sm font-medium text-white">Generation Progress</span>
+                <span className="text-sm text-slate-400">{Math.round(generationProgress)}%</span>
               </div>
-              <Progress value={generationProgress} className="w-full" />
-              <div className="flex items-center gap-4 text-sm">
+              <div className="w-full bg-slate-700 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${generationProgress}%` }}
+                ></div>
+              </div>
+              <div className="flex items-center gap-4 text-sm flex-wrap">
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${generationProgress >= 25 ? 'bg-green-400' : 'bg-muted'}`} />
-                  <span className={generationProgress >= 25 ? 'text-green-400' : 'text-muted-foreground'}>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${generationProgress >= 25 ? 'bg-green-400' : 'bg-slate-600'}`} />
+                  <span className={`transition-colors duration-300 ${generationProgress >= 25 ? 'text-green-400' : 'text-slate-500'}`}>
                     Analyzing dataset...
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                <ChevronRight className="w-4 h-4 text-slate-500" />
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${generationProgress >= 50 ? 'bg-green-400' : 'bg-muted'}`} />
-                  <span className={generationProgress >= 50 ? 'text-green-400' : 'text-muted-foreground'}>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${generationProgress >= 50 ? 'bg-green-400' : 'bg-slate-600'}`} />
+                  <span className={`transition-colors duration-300 ${generationProgress >= 50 ? 'text-green-400' : 'text-slate-500'}`}>
                     Generating visualizations...
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                <ChevronRight className="w-4 h-4 text-slate-500" />
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${generationProgress >= 75 ? 'bg-green-400' : 'bg-muted'}`} />
-                  <span className={generationProgress >= 75 ? 'text-green-400' : 'text-muted-foreground'}>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${generationProgress >= 75 ? 'bg-green-400' : 'bg-slate-600'}`} />
+                  <span className={`transition-colors duration-300 ${generationProgress >= 75 ? 'text-green-400' : 'text-slate-500'}`}>
                     Writing narrative...
                   </span>
                 </div>
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                <ChevronRight className="w-4 h-4 text-slate-500" />
                 <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${generationProgress >= 100 ? 'bg-green-400' : 'bg-muted'}`} />
-                  <span className={generationProgress >= 100 ? 'text-green-400' : 'text-muted-foreground'}>
+                  <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${generationProgress >= 100 ? 'bg-green-400' : 'bg-slate-600'}`} />
+                  <span className={`transition-colors duration-300 ${generationProgress >= 100 ? 'text-green-400' : 'text-slate-500'}`}>
                     Complete!
                   </span>
                 </div>
               </div>
               {currentStep && (
-                <div className="text-center text-sm text-primary font-medium">{currentStep}</div>
+                <div className="text-center text-sm text-blue-400 font-medium">{currentStep}</div>
               )}
             </div>
-          </CardContent>
-        </Card>
-      )}
-    </PageLayout>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };
 

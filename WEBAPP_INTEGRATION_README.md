@@ -235,7 +235,7 @@ pip install flask flask-cors pandas numpy requests
 2. **Verify API key:**
    ```bash
    # Add GEMINI_API_KEY to .env file
-   echo 'GEMINI_API_KEY=your-key-here' > .env
+   echo 'GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE' > .env
    ```
 
 ### File Upload Issues

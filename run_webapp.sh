@@ -32,7 +32,7 @@ if [ ! -f ".env" ]; then
     echo "🔧 Creating .env file..."
     cat > .env << EOL
 # Gemini API Configuration
-GEMINI_API_KEY=your-gemini-api-key-here
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 
 # Flask Configuration
 FLASK_ENV=development

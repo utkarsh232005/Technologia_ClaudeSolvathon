@@ -1,4 +1,4 @@
-import { Database, Brain, BarChart3, Settings, FileText, ArrowRight, Zap, Search, Shield, TrendingUp } from 'lucide-react';
+import { Database, Brain, BarChart3, Settings, FileText, ArrowRight, Zap, Search, Shield, TrendingUp, CheckCircle, Wifi } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import ParticleBackground from '@/components/ParticleBackground';
 import FeatureCard from '@/components/FeatureCard';
@@ -54,7 +54,7 @@ const Index = () => {
               <span className="text-sm text-primary font-medium">Advanced Particle Physics Analysis</span>
             </div>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent leading-tight animate-fade-in"
+            <h1 className="text-4xl md:text-6xl lg:text-7xl title-gradient mb-6 leading-tight"
                 style={{ animationDelay: '400ms' }}>
               Dark Matter Detection
             </h1>
@@ -72,10 +72,10 @@ const Index = () => {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in"
                  style={{ animationDelay: '1000ms' }}>
-              <Button asChild size="lg" className="px-8 py-3 bg-gradient-to-r from-primary to-secondary text-primary-foreground font-medium hover:opacity-90 hover-lift transition-smooth group">
+              <Button asChild size="lg" variant="premium" className="px-8 py-3 font-medium group">
                 <Link to="/data-generator" className="flex items-center gap-2">
                   Start Analysis
-                  <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </Button>
               <Button asChild variant="outline" size="lg" className="px-8 py-3 backdrop-blur-md bg-white/5 border-white/10 hover:bg-white/10 hover-lift transition-smooth">
@@ -87,23 +87,25 @@ const Index = () => {
 
         {/* Stats Section */}
         <section className="animate-fade-in" style={{ animationDelay: '1200ms' }}>
-          <Card className="glass-card border-accent/20">
-            <CardContent className="p-6 md:p-8">
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-                {stats.map((stat, index) => (
-                  <div key={index} className="text-center space-y-2 animate-fade-in" style={{ animationDelay: `${1400 + index * 100}ms` }}>
-                    <div className="flex items-center justify-center mb-2">
-                      <stat.icon className="h-6 w-6 text-primary" />
-                    </div>
-                    <div className="text-2xl md:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                      {stat.value}
-                    </div>
-                    <div className="text-sm md:text-base text-muted-foreground">{stat.label}</div>
-                  </div>
-                ))}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            {stats.map((stat, index) => (
+              <div 
+                key={index} 
+                className="stat-card text-center"
+                style={{ animationDelay: `${1400 + index * 150}ms` }}
+              >
+                <div className="flex items-center justify-center mb-4">
+                  <stat.icon className="h-8 w-8 stat-icon" />
+                </div>
+                <div className="stat-number mb-2">
+                  {stat.value}
+                </div>
+                <div className="text-sm md:text-base text-muted-foreground font-medium">
+                  {stat.label}
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            ))}
+          </div>
         </section>
 
         {/* Feature Cards */}
@@ -113,22 +115,22 @@ const Index = () => {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
             {features.map((feature, index) => (
-              <div key={index} className="animate-fade-in hover-lift transition-smooth group" 
-                   style={{ animationDelay: `${2000 + index * 150}ms` }}>
-                <Card className="h-full glass-card hover-glow">
+              <div key={index} className="group" 
+                   style={{ animationDelay: `${2000 + index * 200}ms` }}>
+                <Card className="feature-card h-full">
                   <CardHeader>
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-4">
-                      <feature.icon className="w-6 h-6 text-primary-foreground" />
+                    <div className="feature-icon-container mb-4">
+                      <feature.icon className="w-6 h-6 text-white" />
                     </div>
                     <CardTitle className="text-xl">{feature.title}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <p className="text-muted-foreground mb-4">{feature.description}</p>
                     <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge className="badge-premium">
                         {feature.stats}
                       </Badge>
-                      <Button asChild variant="ghost" size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button asChild variant="ghost" size="sm" className="feature-arrow-button opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <Link to={feature.href}>
                           <ArrowRight className="h-4 w-4" />
                         </Link>
@@ -154,15 +156,24 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">API Status</span>
-                  <Badge variant="default" className="bg-green-500">Online</Badge>
+                  <Badge className="badge-success">
+                    <CheckCircle className="w-3 h-3" />
+                    Online
+                  </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Data Pipeline</span>
-                  <Badge variant="default" className="bg-blue-500">Processing</Badge>
+                  <Badge className="badge-premium">
+                    <Database className="w-3 h-3" />
+                    Processing
+                  </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">ML Models</span>
-                  <Badge variant="default" className="bg-purple-500">Ready</Badge>
+                  <Badge className="badge-premium">
+                    <Brain className="w-3 h-3" />
+                    Ready
+                  </Badge>
                 </div>
               </div>
             </CardContent>

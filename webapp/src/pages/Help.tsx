@@ -133,7 +133,7 @@ const Help = () => {
           <section id="getting-started" className="scroll-mt-6">
             <Card className="backdrop-blur-md bg-card/50 border-white/10">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 heading-gradient">
                   <BookOpen className="h-5 w-5" />
                   Getting Started
                 </CardTitle>
@@ -157,7 +157,7 @@ const Help = () => {
 
                 {/* Step-by-step Guide */}
                 <div className="space-y-4">
-                  <h3 className="text-xl font-semibold">Quick Start Guide</h3>
+                  <h3 className="text-xl font-semibold section-heading">Quick Start Guide</h3>
                   <div className="grid gap-4">
                     <div className="flex gap-4 p-4 border border-blue-200/20 rounded-lg bg-blue-500/5">
                       <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
@@ -189,12 +189,13 @@ const Help = () => {
                           Input event data manually or upload a batch file to start classification.
                         </p>
                         <Button 
-                          variant="outline" 
+                          variant="premium" 
                           size="sm"
                           onClick={() => navigateToPage('/classifier')}
+                          className="group"
                         >
                           Try Classifier
-                          <ChevronRight className="h-4 w-4 ml-1" />
+                          <ChevronRight className="h-4 w-4 ml-1 transition-transform duration-300 group-hover:translate-x-1" />
                         </Button>
                       </div>
                     </div>
@@ -209,12 +210,13 @@ const Help = () => {
                           Review your classification results with interactive visualizations and detailed analysis.
                         </p>
                         <Button 
-                          variant="outline" 
+                          variant="premium" 
                           size="sm"
                           onClick={() => navigateToPage('/results')}
+                          className="group"
                         >
                           View Results Dashboard
-                          <ChevronRight className="h-4 w-4 ml-1" />
+                          <ChevronRight className="h-4 w-4 ml-1 transition-transform duration-300 group-hover:translate-x-1" />
                         </Button>
                       </div>
                     </div>
@@ -253,7 +255,7 @@ const Help = () => {
           <section id="particle-signatures" className="scroll-mt-6">
             <Card className="backdrop-blur-md bg-card/50 border-white/10">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 heading-gradient">
                   <Atom className="h-5 w-5" />
                   Understanding Particle Signatures
                 </CardTitle>
@@ -316,13 +318,16 @@ const Help = () => {
 
                 {/* Particle Types */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Particle Type Descriptions</h3>
+                  <h3 className="text-lg font-semibold section-heading">Particle Type Descriptions</h3>
                   <div className="grid gap-4">
                     <div className="border border-blue-500/20 rounded-lg p-4 bg-blue-500/5">
                       <div className="flex items-center gap-3 mb-2">
                         <Target className="h-5 w-5 text-blue-400" />
                         <h4 className="font-semibold">WIMP (Weakly Interacting Massive Particle)</h4>
-                        <Badge variant="secondary">Primary Target</Badge>
+                        <Badge className="badge-premium">
+                          <Target className="w-3 h-3" />
+                          Primary Target
+                        </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Hypothetical dark matter candidate. Produces nuclear recoils with characteristic 
@@ -334,7 +339,10 @@ const Help = () => {
                       <div className="flex items-center gap-3 mb-2">
                         <Atom className="h-5 w-5 text-purple-400" />
                         <h4 className="font-semibold">Axion</h4>
-                        <Badge variant="secondary">Dark Matter Candidate</Badge>
+                        <Badge className="badge-premium">
+                          <Atom className="w-3 h-3" />
+                          Dark Matter Candidate
+                        </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Ultralight pseudoscalar particle. Can convert to photons in strong magnetic fields, 
@@ -346,7 +354,10 @@ const Help = () => {
                       <div className="flex items-center gap-3 mb-2">
                         <Database className="h-5 w-5 text-orange-400" />
                         <h4 className="font-semibold">Neutrino</h4>
-                        <Badge variant="secondary">Standard Model</Badge>
+                        <Badge className="badge-warning">
+                          <Database className="w-3 h-3" />
+                          Standard Model
+                        </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Nearly massless neutral lepton. Extremely rare interactions but can provide 
@@ -358,7 +369,10 @@ const Help = () => {
                       <div className="flex items-center gap-3 mb-2">
                         <AlertTriangle className="h-5 w-5 text-gray-400" />
                         <h4 className="font-semibold">Background</h4>
-                        <Badge variant="outline">Noise</Badge>
+                        <Badge className="badge-outline-premium">
+                          <AlertTriangle className="w-3 h-3" />
+                          Noise
+                        </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         Electronic recoils from gamma rays, beta particles, and other electromagnetic 
@@ -435,7 +449,7 @@ const Help = () => {
           <section id="using-classifier" className="scroll-mt-6">
             <Card className="backdrop-blur-md bg-card/50 border-white/10">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 heading-gradient">
                   <Settings className="h-5 w-5" />
                   Using the Classifier
                 </CardTitle>
@@ -588,9 +602,13 @@ const Help = () => {
                   </div>
                 </div>
 
-                <Button onClick={() => navigateToPage('/results')}>
+                <Button 
+                  onClick={() => navigateToPage('/results')}
+                  variant="premium"
+                  className="group"
+                >
                   Explore Results Dashboard
-                  <ExternalLink className="h-4 w-4 ml-2" />
+                  <ExternalLink className="h-4 w-4 ml-2 transition-transform duration-300 group-hover:translate-x-1" />
                 </Button>
 
                 {/* Was this helpful? */}

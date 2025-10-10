@@ -17,7 +17,7 @@ const PageLayout = ({ children, title, description, showFooter = true }: PageLay
       <div className="relative z-10 flex-1 flex flex-col">
         <div className="p-4 sm:p-6 lg:p-8 flex-1">
           <div className="mb-6 sm:mb-8">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent page-transition">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl heading-gradient mb-2 page-transition">
               {title}
             </h1>
             {description && (
