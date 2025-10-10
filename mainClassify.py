@@ -378,7 +378,7 @@ if not API_KEY:
 API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={}"
 MODEL_NAME = "gemini-2.5-flash" # Cost-effective model for detailed reasoning
 
-CSV = 'dark_matter_synthetic_dataset.csv'
+CSV = 'dataset/dark_matter_synthetic_dataset.csv'
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description='Classify candidate events using Gemini/Claude API')

@@ -11,10 +11,11 @@ Technologia_ClaudeSolvathon/
 ├── requirements.txt                     # Python dependencies
 ├── README.md                            # This file
 ├── .env.example                         # Environment variable template
-├── dark_matter_synthetic_dataset.csv    # Generated dataset
-├── dark_matter_synthetic_dataset.json   # Dataset (JSON format)
-├── dataset_metadata.json                # Dataset statistics
-├── claude_classified_results_detailed.json  # Classification results
+├── dataset/                             # Generated datasets
+│   ├── dark_matter_synthetic_dataset.csv    # Main dataset
+│   ├── dark_matter_synthetic_dataset.json   # Dataset (JSON format)
+│   ├── dataset_metadata.json                # Dataset statistics
+│   └── test_events_for_classification.json  # Test events
 └── webapp/                              # Web application (React + Vite)
     ├── src/                             # Source code
     ├── public/                          # Static assets
