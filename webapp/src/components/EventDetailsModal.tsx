@@ -243,8 +243,7 @@ export const EventDetailsModal = ({
               <CardContent className="pt-6">
                 <div className="text-center space-y-4">
                   <Badge 
-                    variant="outline" 
-                    className={`text-lg px-4 py-2 ${typeColors[event.type as keyof typeof typeColors]}`}
+                    className={`badge-premium text-lg px-4 py-2 ${typeColors[event.type as keyof typeof typeColors]}`}
                   >
                     {event.type}
                   </Badge>
@@ -348,7 +347,7 @@ export const EventDetailsModal = ({
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="font-mono text-sm">{similarEvent.id}</span>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge className="badge-outline-premium text-xs">
                               {similarEvent.type}
                             </Badge>
                           </div>
@@ -401,16 +400,16 @@ export const EventDetailsModal = ({
           </Button>
           
           <div className="flex items-center gap-2">
-            <Button size="sm" variant="outline" onClick={() => onExport?.(event)}>
-              <Download className="w-4 h-4 mr-2" />
+            <Button size="sm" variant="outline" onClick={() => onExport?.(event)} className="group">
+              <Download className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
               Export Event
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onCompare?.(event)}>
-              <GitCompare className="w-4 h-4 mr-2" />
+            <Button size="sm" variant="outline" onClick={() => onCompare?.(event)} className="group">
+              <GitCompare className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
               Compare
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onReClassify?.(event)}>
-              <RotateCcw className="w-4 h-4 mr-2" />
+            <Button size="sm" variant="premium" onClick={() => onReClassify?.(event)} className="group">
+              <RotateCcw className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
               Re-classify
             </Button>
           </div>

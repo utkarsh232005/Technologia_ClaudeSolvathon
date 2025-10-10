@@ -26,7 +26,10 @@ import {
   Clock,
   AlertTriangle,
   BarChart3,
-  ExternalLink
+  ExternalLink,
+  Shield,
+  Sparkles,
+  Box
 } from 'lucide-react';
 
 interface EventData {
@@ -288,28 +291,28 @@ const EventClassifier = () => {
     try {
       const result = await ClassificationAPI.processBatchClassification(batchState.tempFilePath);
 
-      if (result.success && result.results) {
+      if (result.success && result.result) {
         setBatchState(prev => ({
           ...prev,
           isProcessing: false,
-          processedResults: result.results?.map(r => ({
+          processedResults: result.result!.results?.map(r => ({
             event: {
               id: r.id,
-              energy: r.energy,
-              s1: r.s1,
-              s2: r.s2,
-              s2s1Ratio: r.s2s1Ratio,
-              type: r.type,
+              energy: r.features.energy,
+              s1: r.features.s1,
+              s2: r.features.s2,
+              s2s1Ratio: r.features.s2 / r.features.s1,
+              type: r.eventType,
               confidence: r.confidence
             },
             classification: {
-              type: r.type,
+              type: r.eventType,
               confidence: r.confidence,
-              processingTime: r.processingTime
+              processingTime: r.classification?.processingTime || 0
             }
           })) || []
         }));
-        showToast.success(`Batch processing completed: ${result.summary?.successful || 0} events classified`);
+        showToast.success(`Batch processing completed: ${result.result!.successful || 0} events classified`);
       } else {
         setBatchState(prev => ({
           ...prev,
@@ -421,7 +424,7 @@ const EventClassifier = () => {
     return '--';
   };
 
-  const loadExample = (type: 'wimp' | 'background') => {
+  const loadExample = (type: 'wimp' | 'background' | 'neutrino') => {
     if (type === 'wimp') {
       setEventData({
         recoilEnergy: '12.5',
@@ -433,7 +436,7 @@ const EventClassifier = () => {
         positionZ: '15.7',
         timestamp: new Date().toISOString().slice(0, 16)
       });
-    } else {
+    } else if (type === 'background') {
       setEventData({
         recoilEnergy: '8.2',
         s1Signal: '120',
@@ -452,10 +455,30 @@ const EventClassifier = () => {
       title="Event Classifier"
       description="AI-powered classification to distinguish WIMP signals from background noise"
     >
+      {/* Premium Header with Gradient Text */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent leading-tight">
+          Dark Matter Event Classifier
+        </h1>
+        <p className="text-lg text-slate-300 max-w-3xl">
+          Leverage advanced machine learning to distinguish WIMP signals from background noise with high precision analysis.
+        </p>
+      </div>
+
       <Tabs defaultValue="single" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="single">Single Event</TabsTrigger>
-          <TabsTrigger value="batch">Batch Processing</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-8 h-12 bg-slate-800/60 border border-slate-700">
+          <TabsTrigger 
+            value="single" 
+            className="text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+          >
+            Single Event Analysis
+          </TabsTrigger>
+          <TabsTrigger 
+            value="batch" 
+            className="text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+          >
+            Batch Processing
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="single">

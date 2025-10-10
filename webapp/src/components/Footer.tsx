@@ -14,7 +14,7 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary to-secondary" />
-              <span className="font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              <span className="font-bold title-gradient">
                 Dark Signal AI
               </span>
             </div>
@@ -23,7 +23,8 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-2">
               <Activity className="h-4 w-4 text-green-500" />
-              <Badge variant="outline" className="text-xs">
+              <Badge className="badge-success text-xs">
+                <Activity className="w-3 h-3" />
                 API Status: Online
               </Badge>
             </div>

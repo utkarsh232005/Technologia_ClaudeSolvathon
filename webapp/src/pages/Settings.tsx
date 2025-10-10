@@ -411,13 +411,18 @@ const Settings = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button onClick={saveSettings} disabled={saveStatus === 'saving'}>
-                  <Save className="w-4 h-4 mr-2" />
+                <Button 
+                  onClick={saveSettings} 
+                  disabled={saveStatus === 'saving'}
+                  variant="premium"
+                  className="group"
+                >
+                  <Save className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
                   {saveStatus === 'saving' ? 'Saving...' : 'Save Settings'}
                 </Button>
                 {saveStatus === 'saved' && (
-                  <Badge variant="outline" className="text-green-400 border-green-500/50">
-                    <CheckCircle className="w-3 h-3 mr-1" />
+                  <Badge className="badge-success">
+                    <CheckCircle className="w-3 h-3" />
                     Saved
                   </Badge>
                 )}
@@ -462,7 +467,7 @@ const Settings = () => {
           <TabsContent value="claude">
             <Card className="backdrop-blur-md bg-card/50 border-white/10">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 heading-gradient">
                   <Brain className="w-5 h-5" />
                   Claude API Configuration
                 </CardTitle>
@@ -858,7 +863,7 @@ const Settings = () => {
                       <div className="flex items-start justify-between mb-3">
                         <div>
                           <h4 className="font-medium">{example.name}</h4>
-                          <Badge variant="outline" className="mt-1">
+                          <Badge className="badge-outline-premium">
                             {example.expectedOutput.type}
                           </Badge>
                         </div>

@@ -11,7 +11,7 @@
 
 Example `.env` content:
 ```properties
-GEMINI_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXX
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
 
 ---

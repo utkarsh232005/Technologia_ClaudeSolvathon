@@ -31,7 +31,7 @@ Before starting, make sure you have:
    ```
 3. Replace with your actual key:
    ```properties
-   GEMINI_API_KEY="AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXX"
+   GEMINI_API_KEY="YOUR_GEMINI_API_KEY_HERE"
    ```
 4. Save the file
 
