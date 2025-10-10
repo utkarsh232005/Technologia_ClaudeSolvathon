@@ -378,7 +378,7 @@ if not API_KEY:
 API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={}"
 MODEL_NAME = "gemini-2.5-flash" # Cost-effective model for detailed reasoning
 
-CSV = 'dark_matter_synthetic_dataset.csv'
+CSV = 'dataset/dark_matter_synthetic_dataset.csv'
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description='Classify candidate events using Gemini/Claude API')
@@ -678,7 +678,7 @@ def run_api_pipeline(df: pd.DataFrame, num_events: int) -> None:
         time.sleep(2) 
 
     # Save the final results
-    output_filename = 'claude_classified_results_detailed.json'
+    output_filename = 'dataset/claude_classified_results_detailed.json'
     with open(output_filename, 'w', encoding='utf-8') as f:
         json.dump(out, f, indent=2, ensure_ascii=False)
     print(f'\nPipeline complete. Detailed results saved to {output_filename}')
