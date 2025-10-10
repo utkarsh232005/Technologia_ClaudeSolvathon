@@ -729,96 +729,113 @@ const EventClassifier = () => {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => copyToClipboard(`Event Classification Analysis:
-├─ Step 1: Energy Analysis
-│  ├─ Recoil energy: 12.5 keV (consistent with WIMP interaction)
-│  └─ Below nuclear recoil threshold (50 keV)
-├─ Step 2: Signal Discrimination
-│  ├─ S2/S1 ratio: 7.11 (nuclear recoil band)
-│  └─ Electronic recoil ratio would be >20
-├─ Step 3: Pulse Shape Analysis
-│  └─ Decay time: 0.85 (nuclear recoil characteristic)
-├─ Step 4: Spatial Check
-│  └─ Position (2.1, -1.3, 15.7) within fiducial volume
-└─ Conclusion: WIMP-like candidate (87% confidence)`)}
+                                onClick={() => {
+                                  const reasoning = classificationResult?.analysis?.reasoning;
+                                  if (reasoning) {
+                                    copyToClipboard(`Event Classification Analysis:
+├─ Energy Analysis: ${reasoning.energyAnalysis}
+├─ S2/S1 Analysis: ${reasoning.s2s1Analysis}
+├─ Position Analysis: ${reasoning.positionAnalysis}
+├─ Pulse Characteristics: ${reasoning.pulseCharacteristics}
+├─ Physics Interpretation: ${reasoning.physicsInterpretation}
+└─ Confidence: ${classificationResult.classification?.confidence}%`);
+                                  }
+                                }}
                               >
                                 <Copy className="w-3 h-3" />
                               </Button>
                             </div>
 
                             <div className="text-green-400">
-                              <div className="cursor-pointer" onClick={() => toggleSection('step1')}>
-                                <span className={expandedSections.step1 ? 'text-blue-400' : ''}>
-                                  {expandedSections.step1 ? '├─' : '├─'} Step 1: Energy Analysis
+                              <div className="cursor-pointer" onClick={() => toggleSection('energy')}>
+                                <span className={expandedSections.energy ? 'text-blue-400' : ''}>
+                                  ├─ Energy Analysis
                                 </span>
                               </div>
-                              {expandedSections.step1 && (
-                                <div className="ml-2 text-gray-300">
-                                  <div>│  ├─ Recoil energy: {eventData.recoilEnergy || '12.5'} keV (consistent with WIMP interaction)</div>
-                                  <div>│  ├─ Below nuclear recoil threshold (50 keV)</div>
-                                  <div>│  └─ Energy spectrum matches expected WIMP range</div>
+                              {expandedSections.energy && (
+                                <div className="ml-2 text-gray-300 whitespace-pre-wrap">
+                                  {classificationResult?.analysis?.reasoning?.energyAnalysis || 'No energy analysis available'}
                                 </div>
                               )}
 
-                              <div className="cursor-pointer" onClick={() => toggleSection('step2')}>
-                                <span className={expandedSections.step2 ? 'text-blue-400' : ''}>
-                                  ├─ Step 2: Signal Discrimination
+                              <div className="cursor-pointer" onClick={() => toggleSection('s2s1')}>
+                                <span className={expandedSections.s2s1 ? 'text-blue-400' : ''}>
+                                  ├─ S2/S1 Signal Analysis
                                 </span>
                               </div>
-                              {expandedSections.step2 && (
-                                <div className="ml-2 text-gray-300">
-                                  <div>│  ├─ S2/S1 ratio: {calculateS2S1Ratio()} (nuclear recoil band)</div>
-                                  <div>│  ├─ Electronic recoil ratio would be &gt;20</div>
-                                  <div>│  └─ Charge yield consistent with nuclear recoil</div>
+                              {expandedSections.s2s1 && (
+                                <div className="ml-2 text-gray-300 whitespace-pre-wrap">
+                                  {classificationResult?.analysis?.reasoning?.s2s1Analysis || 'No S2/S1 analysis available'}
                                 </div>
                               )}
 
-                              <div className="cursor-pointer" onClick={() => toggleSection('step3')}>
-                                <span className={expandedSections.step3 ? 'text-blue-400' : ''}>
-                                  ├─ Step 3: Pulse Shape Analysis
+                              <div className="cursor-pointer" onClick={() => toggleSection('position')}>
+                                <span className={expandedSections.position ? 'text-blue-400' : ''}>
+                                  ├─ Position Analysis
                                 </span>
                               </div>
-                              {expandedSections.step3 && (
-                                <div className="ml-2 text-gray-300">
-                                  <div>│  ├─ Decay time: {eventData.pulseShape || '0.85'} (nuclear recoil characteristic)</div>
-                                  <div>│  ├─ Rise time within expected range</div>
-                                  <div>│  └─ F90 parameter indicates nuclear interaction</div>
+                              {expandedSections.position && (
+                                <div className="ml-2 text-gray-300 whitespace-pre-wrap">
+                                  {classificationResult?.analysis?.reasoning?.positionAnalysis || 'No position analysis available'}
                                 </div>
                               )}
 
-                              <div className="cursor-pointer" onClick={() => toggleSection('step4')}>
-                                <span className={expandedSections.step4 ? 'text-blue-400' : ''}>
-                                  ├─ Step 4: Spatial Check
+                              <div className="cursor-pointer" onClick={() => toggleSection('pulse')}>
+                                <span className={expandedSections.pulse ? 'text-blue-400' : ''}>
+                                  ├─ Pulse Characteristics
                                 </span>
                               </div>
-                              {expandedSections.step4 && (
-                                <div className="ml-2 text-gray-300">
-                                  <div>│  ├─ Position ({eventData.positionX || '2.1'}, {eventData.positionY || '-1.3'}, {eventData.positionZ || '15.7'}) cm</div>
-                                  <div>│  ├─ Within fiducial volume boundaries</div>
-                                  <div>│  └─ Away from detector walls (background rejection)</div>
+                              {expandedSections.pulse && (
+                                <div className="ml-2 text-gray-300 whitespace-pre-wrap">
+                                  {classificationResult?.analysis?.reasoning?.pulseCharacteristics || 'No pulse analysis available'}
                                 </div>
                               )}
 
                               <div className="text-yellow-400">
-                                └─ <span className="font-bold">Conclusion: WIMP-like candidate (87% confidence)</span>
+                                └─ <span className="font-bold">
+                                  {classificationResult?.classification?.type || 'Unknown'} ({classificationResult?.classification?.confidence}% confidence)
+                                </span>
                               </div>
                             </div>
                           </div>
 
-                          {/* Related Literature */}
-                          <Collapsible open={expandedSections.literature} onOpenChange={() => toggleSection('literature')}>
+                          {/* Physics Interpretation */}
+                          <Collapsible open={expandedSections.physics} onOpenChange={() => toggleSection('physics')}>
                             <CollapsibleTrigger asChild>
                               <Button variant="ghost" className="w-full justify-between text-left">
-                                <span className="font-semibold">Related Literature</span>
+                                <span className="font-semibold">Physics Interpretation</span>
                                 <div className="flex items-center gap-2">
                                   <Copy
                                     className="w-3 h-3"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      copyToClipboard(`Related Literature:
-1. Aprile et al. (2018) - "Dark Matter Search Results from a One Ton-Year Exposure of XENON1T"
-2. Akerib et al. (2017) - "Results from a search for dark matter in the complete LUX exposure"
-3. Agnes et al. (2018) - "Low-Mass Dark Matter Search with the DarkSide-50 Experiment"`);
+                                      copyToClipboard(classificationResult?.analysis?.reasoning?.physicsInterpretation || 'No physics interpretation available');
+                                    }}
+                                  />
+                                  <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.physics ? 'rotate-90' : ''}`} />
+                                </div>
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
+                                <div className="whitespace-pre-wrap text-muted-foreground">
+                                  {classificationResult?.analysis?.reasoning?.physicsInterpretation || 'No physics interpretation available'}
+                                </div>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+
+                          {/* Related Literature */}
+                          <Collapsible open={expandedSections.literature} onOpenChange={() => toggleSection('literature')}>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" className="w-full justify-between text-left">
+                                <span className="font-semibold">Literature Comparison</span>
+                                <div className="flex items-center gap-2">
+                                  <Copy
+                                    className="w-3 h-3"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(classificationResult?.analysis?.reasoning?.comparisonWithLiterature || 'No literature comparison available');
                                     }}
                                   />
                                   <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.literature ? 'rotate-90' : ''}`} />
@@ -826,21 +843,9 @@ const EventClassifier = () => {
                               </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                              <div className="bg-muted/10 rounded-lg p-3 text-sm space-y-2">
-                                <div>
-                                  <div className="font-semibold text-blue-400">1. Aprile et al. (2018)</div>
-                                  <div className="text-muted-foreground">"Dark Matter Search Results from a One Ton-Year Exposure of XENON1T"</div>
-                                  <div className="text-xs">Phys. Rev. Lett. 121, 111302 - Similar S2/S1 discrimination methods</div>
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-blue-400">2. Akerib et al. (2017)</div>
-                                  <div className="text-muted-foreground">"Results from a search for dark matter in the complete LUX exposure"</div>
-                                  <div className="text-xs">Phys. Rev. Lett. 118, 021303 - Pulse shape discrimination techniques</div>
-                                </div>
-                                <div>
-                                  <div className="font-semibold text-blue-400">3. Agnes et al. (2018)</div>
-                                  <div className="text-muted-foreground">"Low-Mass Dark Matter Search with the DarkSide-50 Experiment"</div>
-                                  <div className="text-xs">Phys. Rev. Lett. 121, 081307 - Low-energy nuclear recoil analysis</div>
+                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
+                                <div className="whitespace-pre-wrap text-muted-foreground">
+                                  {classificationResult?.analysis?.reasoning?.comparisonWithLiterature || 'No literature comparison available'}
                                 </div>
                               </div>
                             </CollapsibleContent>
@@ -850,16 +855,13 @@ const EventClassifier = () => {
                           <Collapsible open={expandedSections.alternatives} onOpenChange={() => toggleSection('alternatives')}>
                             <CollapsibleTrigger asChild>
                               <Button variant="ghost" className="w-full justify-between text-left">
-                                <span className="font-semibold">Alternative Hypotheses</span>
+                                <span className="font-semibold">Alternative Interpretations</span>
                                 <div className="flex items-center gap-2">
                                   <Copy
                                     className="w-3 h-3"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      copyToClipboard(`Alternative Hypotheses:
-1. Neutron scatter (15% probability) - Could produce similar nuclear recoil signature
-2. Alpha decay (8% probability) - Possible if alpha particle energy deposited partially
-3. Detector artifact (5% probability) - Electronic noise or calibration issue`);
+                                      copyToClipboard(classificationResult?.analysis?.reasoning?.alternativeInterpretations || 'No alternative interpretations available');
                                     }}
                                   />
                                   <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.alternatives ? 'rotate-90' : ''}`} />
@@ -867,26 +869,35 @@ const EventClassifier = () => {
                               </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                              <div className="bg-muted/10 rounded-lg p-3 text-sm space-y-2">
-                                <div className="flex justify-between items-start">
-                                  <div>
-                                    <div className="font-semibold text-orange-400">Neutron scatter (15% probability)</div>
-                                    <div className="text-muted-foreground">Could produce similar nuclear recoil signature</div>
-                                    <div className="text-xs">• Would require coincident veto failure</div>
-                                    <div className="text-xs">• Energy spectrum slightly different</div>
-                                  </div>
+                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
+                                <div className="whitespace-pre-wrap text-muted-foreground">
+                                  {classificationResult?.analysis?.reasoning?.alternativeInterpretations || 'No alternative interpretations available'}
                                 </div>
-                                <div>
-                                  <div className="font-semibold text-orange-400">Alpha decay (8% probability)</div>
-                                  <div className="text-muted-foreground">Possible if alpha particle energy deposited partially</div>
-                                  <div className="text-xs">• Requires surface contamination</div>
-                                  <div className="text-xs">• Pulse shape would be different</div>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+
+                          {/* Confidence Factors */}
+                          <Collapsible open={expandedSections.confidence} onOpenChange={() => toggleSection('confidence')}>
+                            <CollapsibleTrigger asChild>
+                              <Button variant="ghost" className="w-full justify-between text-left">
+                                <span className="font-semibold">Confidence Factors</span>
+                                <div className="flex items-center gap-2">
+                                  <Copy
+                                    className="w-3 h-3"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(classificationResult?.analysis?.reasoning?.confidenceFactors || 'No confidence factors available');
+                                    }}
+                                  />
+                                  <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.confidence ? 'rotate-90' : ''}`} />
                                 </div>
-                                <div>
-                                  <div className="font-semibold text-orange-400">Detector artifact (5% probability)</div>
-                                  <div className="text-muted-foreground">Electronic noise or calibration issue</div>
-                                  <div className="text-xs">• Statistical analysis shows low probability</div>
-                                  <div className="text-xs">• Would require multiple system failures</div>
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
+                                <div className="whitespace-pre-wrap text-muted-foreground">
+                                  {classificationResult?.analysis?.reasoning?.confidenceFactors || 'No confidence factors available'}
                                 </div>
                               </div>
                             </CollapsibleContent>
@@ -896,18 +907,13 @@ const EventClassifier = () => {
                           <Collapsible open={expandedSections.followups} onOpenChange={() => toggleSection('followups')}>
                             <CollapsibleTrigger asChild>
                               <Button variant="ghost" className="w-full justify-between text-left">
-                                <span className="font-semibold">Suggested Follow-ups</span>
+                                <span className="font-semibold">Follow-up Recommendations</span>
                                 <div className="flex items-center gap-2">
                                   <Copy
                                     className="w-3 h-3"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      copyToClipboard(`Suggested Follow-ups:
-1. Cross-check with neutron veto systems
-2. Analyze events in temporal vicinity (±10 minutes)
-3. Verify detector calibration for this energy range
-4. Review similar events in historical data
-5. Perform Monte Carlo simulation comparison`);
+                                      copyToClipboard(classificationResult?.analysis?.reasoning?.followUpRecommendations || 'No follow-up recommendations available');
                                     }}
                                   />
                                   <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.followups ? 'rotate-90' : ''}`} />
@@ -915,26 +921,9 @@ const EventClassifier = () => {
                               </Button>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                              <div className="bg-muted/10 rounded-lg p-3 text-sm space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-green-400">1.</span>
-                                  <span>Cross-check with neutron veto systems</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-green-400">2.</span>
-                                  <span>Analyze events in temporal vicinity (±10 minutes)</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-green-400">3.</span>
-                                  <span>Verify detector calibration for this energy range</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-green-400">4.</span>
-                                  <span>Review similar events in historical data</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-green-400">5.</span>
-                                  <span>Perform Monte Carlo simulation comparison</span>
+                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
+                                <div className="whitespace-pre-wrap text-muted-foreground">
+                                  {classificationResult?.analysis?.reasoning?.followUpRecommendations || 'No follow-up recommendations available'}
                                 </div>
                               </div>
                             </CollapsibleContent>
