@@ -16,7 +16,6 @@ import ReportGenerator from "./pages/ReportGenerator";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import NotFound from "./pages/NotFound";
-import SidebarDemo from "./pages/SidebarDemo";
 
 const queryClient = new QueryClient();
 
@@ -57,7 +56,6 @@ function AppContent() {
             <Route path="/reports" element={<ReportGenerator />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/help" element={<Help />} />
-            <Route path="/sidebar-demo" element={<SidebarDemo />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
