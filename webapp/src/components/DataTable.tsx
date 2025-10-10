@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,7 @@ import {
   ChevronsLeft,
   ChevronsRight
 } from 'lucide-react';
+import EventDetailsModal from './EventDetailsModal';
 
 export interface EventData {
   id: string;
@@ -98,6 +99,10 @@ export const DataTable = ({
     confidence: true,
     actions: true
   });
+  
+  // Modal state
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
 
   const columns = [
     { key: 'id', label: 'Event ID', sortable: true },
@@ -180,6 +185,32 @@ export const DataTable = ({
     onExport?.(selectedEvents);
   };
 
+  // Modal handlers
+  const handleViewEvent = (event: EventData) => {
+    setSelectedEvent(event);
+    setIsModalOpen(true);
+    onViewDetails?.(event);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedEvent(null);
+  };
+
+  const handleExportEvent = (event: EventData) => {
+    onExport?.([event]);
+  };
+
+  const handleCompareEvent = (event: EventData) => {
+    // Placeholder for compare functionality
+    console.log('Compare event:', event.id);
+  };
+
+  const handleReClassifyEvent = (event: EventData) => {
+    // Placeholder for re-classification functionality
+    console.log('Re-classify event:', event.id);
+  };
+
   const toggleColumnVisibility = (column: string) => {
     setVisibleColumns(prev => ({
       ...prev,
@@ -199,6 +230,7 @@ export const DataTable = ({
   };
 
   return (
+    <>
     <Card className="backdrop-blur-md bg-card/50 border-white/10">
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -379,7 +411,7 @@ export const DataTable = ({
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => onViewDetails?.(event)}
+                          onClick={() => handleViewEvent(event)}
                           className="h-8 w-8 p-0"
                         >
                           <Eye className="w-4 h-4" />
@@ -458,6 +490,17 @@ export const DataTable = ({
         </div>
       </CardContent>
     </Card>
+
+    {/* Event Details Modal */}
+    <EventDetailsModal
+      isOpen={isModalOpen}
+      onClose={handleCloseModal}
+      event={selectedEvent}
+      onExport={handleExportEvent}
+      onCompare={handleCompareEvent}
+      onReClassify={handleReClassifyEvent}
+    />
+  </>
   );
 };
 
