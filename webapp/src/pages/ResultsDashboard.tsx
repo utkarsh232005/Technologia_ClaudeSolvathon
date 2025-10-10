@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import PageLayout from '@/components/PageLayout';
+import DataTable, { EventData } from '@/components/DataTable';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,17 +24,22 @@ import {
 import { Download, Eye, EyeOff, AlertTriangle, Search, Check, Clock, Filter } from 'lucide-react';
 
 // Mock data for demonstrations
-const mockEventData = [
-  { id: 1, energy: 12.5, s2s1Ratio: 7.1, classification: 'WIMP', confidence: 87 },
-  { id: 2, energy: 8.2, s2s1Ratio: 1.5, classification: 'Background', confidence: 92 },
-  { id: 3, energy: 15.3, s2s1Ratio: 25.2, classification: 'Axion', confidence: 76 },
-  { id: 4, energy: 22.1, s2s1Ratio: 45.8, classification: 'Neutrino', confidence: 68 },
-  { id: 5, energy: 9.8, s2s1Ratio: 2.1, classification: 'Background', confidence: 89 },
-  { id: 6, energy: 18.7, s2s1Ratio: 12.4, classification: 'WIMP', confidence: 82 },
-  { id: 7, energy: 35.2, s2s1Ratio: 78.3, classification: 'Neutrino', confidence: 71 },
-  { id: 8, energy: 14.1, s2s1Ratio: 18.9, classification: 'Axion', confidence: 79 },
-  { id: 9, energy: 6.5, s2s1Ratio: 1.8, classification: 'Background', confidence: 95 },
-  { id: 10, energy: 11.3, s2s1Ratio: 8.7, classification: 'WIMP', confidence: 84 },
+const mockEventData: EventData[] = [
+  { id: 'EVT-001', energy: 12.5, s1: 45, s2: 320, s2s1Ratio: 7.11, type: 'WIMP', confidence: 87 },
+  { id: 'EVT-002', energy: 8.2, s1: 120, s2: 180, s2s1Ratio: 1.5, type: 'Background', confidence: 92 },
+  { id: 'EVT-003', energy: 15.3, s1: 67, s2: 1689, s2s1Ratio: 25.2, type: 'Axion', confidence: 76 },
+  { id: 'EVT-004', energy: 22.1, s1: 89, s2: 4077, s2s1Ratio: 45.8, type: 'Neutrino', confidence: 68 },
+  { id: 'EVT-005', energy: 9.8, s1: 134, s2: 281, s2s1Ratio: 2.1, type: 'Background', confidence: 89 },
+  { id: 'EVT-006', energy: 18.7, s1: 72, s2: 893, s2s1Ratio: 12.4, type: 'WIMP', confidence: 82 },
+  { id: 'EVT-007', energy: 35.2, s1: 156, s2: 12214, s2s1Ratio: 78.3, type: 'Neutrino', confidence: 71 },
+  { id: 'EVT-008', energy: 14.1, s1: 58, s2: 1096, s2s1Ratio: 18.9, type: 'Axion', confidence: 79 },
+  { id: 'EVT-009', energy: 6.5, s1: 98, s2: 176, s2s1Ratio: 1.8, type: 'Background', confidence: 95 },
+  { id: 'EVT-010', energy: 11.3, s1: 52, s2: 452, s2s1Ratio: 8.7, type: 'WIMP', confidence: 84 },
+  { id: 'EVT-011', energy: 28.4, s1: 112, s2: 7896, s2s1Ratio: 70.5, type: 'Neutrino', confidence: 73 },
+  { id: 'EVT-012', energy: 7.9, s1: 145, s2: 203, s2s1Ratio: 1.4, type: 'Background', confidence: 91 },
+  { id: 'EVT-013', energy: 16.8, s1: 63, s2: 1428, s2s1Ratio: 22.7, type: 'Axion', confidence: 77 },
+  { id: 'EVT-014', energy: 5.3, s1: 87, s2: 139, s2s1Ratio: 1.6, type: 'Background', confidence: 94 },
+  { id: 'EVT-015', energy: 13.2, s1: 49, s2: 539, s2s1Ratio: 11.0, type: 'WIMP', confidence: 85 },
 ];
 
 // Mock anomaly data
@@ -131,7 +137,7 @@ const ResultsDashboard = () => {
   const totalEvents = mockEventData.length;
   const classificationBreakdown = Object.entries(
     mockEventData.reduce((acc, event) => {
-      acc[event.classification] = (acc[event.classification] || 0) + 1;
+      acc[event.type] = (acc[event.type] || 0) + 1;
       return acc;
     }, {} as {[key: string]: number})
   ).map(([name, value]) => ({ name, value, fill: classificationColors[name as keyof typeof classificationColors] }));
@@ -180,7 +186,13 @@ const ResultsDashboard = () => {
   ];
 
   // Filtered scatter plot data
-  const scatterData = mockEventData.filter(event => visibleTypes[event.classification]);
+  const scatterData = mockEventData.filter(event => visibleTypes[event.type]).map(event => ({
+    energy: event.energy,
+    s2s1Ratio: event.s2s1Ratio,
+    classification: event.type,
+    id: event.id,
+    confidence: event.confidence
+  }));
 
   const toggleType = (type: string) => {
     setVisibleTypes(prev => ({ ...prev, [type]: !prev[type] }));
@@ -196,6 +208,27 @@ const ResultsDashboard = () => {
       ...prev,
       [anomalyId]: action === 'investigate' ? 'investigating' : 'known'
     }));
+  };
+
+  // DataTable handlers
+  const handleViewDetails = (event: EventData) => {
+    console.log('View details for event:', event);
+    // TODO: Open event details modal
+  };
+
+  const handleEditEvent = (event: EventData) => {
+    console.log('Edit event:', event);
+    // TODO: Open edit modal
+  };
+
+  const handleFlagAnomaly = (event: EventData) => {
+    console.log('Flag as anomaly:', event);
+    // TODO: Add to anomaly list
+  };
+
+  const handleExportEvents = (events: EventData[]) => {
+    console.log('Export events:', events);
+    // TODO: Export to CSV/JSON
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -649,6 +682,18 @@ const ResultsDashboard = () => {
             )}
           </CardContent>
         </Card>
+      </div>
+
+      {/* Event Data Table */}
+      <div className="mt-8">
+        <DataTable
+          data={mockEventData}
+          title="Detection Events"
+          onViewDetails={handleViewDetails}
+          onEdit={handleEditEvent}
+          onFlag={handleFlagAnomaly}
+          onExport={handleExportEvents}
+        />
       </div>
     </PageLayout>
   );
