@@ -6,20 +6,22 @@ This project generates synthetic dark matter detector data and classifies candid
 
 ```
 Technologia_ClaudeSolvathon/
-├── main.py                              # Dataset generator (50,000 events)
-├── mainClassify.py                      # AI-powered event classifier
-├── requirements.txt                     # Python dependencies
-├── README.md                            # This file
-├── .env.example                         # Environment variable template
-├── dataset/                             # Generated datasets
-│   ├── dark_matter_synthetic_dataset.csv    # Main dataset
-│   ├── dark_matter_synthetic_dataset.json   # Dataset (JSON format)
-│   ├── dataset_metadata.json                # Dataset statistics
-│   └── test_events_for_classification.json  # Test events
-└── webapp/                              # Web application (React + Vite)
-    ├── src/                             # Source code
-    ├── public/                          # Static assets
-    └── package.json                     # NPM dependencies
+├── main.py                          # Dataset generator (50,000 events)
+├── requirements.txt                 # Python dependencies
+├── README.md                        # This file
+├── .env.example                     # Environment variable template
+├── dataset/                         # Generated datasets
+│   ├── dark_matter_synthetic_dataset.csv
+│   ├── dark_matter_synthetic_dataset.json
+│   └── dataset_metadata.json
+├── classification_system/           # AI Classification & Reasoning
+│   ├── enhanced_classifier.py       # 7-section detailed explanations
+│   ├── mainClassify.py             # Original classifier
+│   ├── results/                    # Classification results
+│   └── explanations/               # Detailed scientific reports
+└── webapp/                          # Web application (React + Vite)
+    ├── src/                         # Source code
+    └── public/                      # Static assets
 ```
 
 ## Core Components
@@ -66,16 +68,29 @@ notepad .env
 python main.py
 ```
 
-### 4. Run Classification
+### 4. Run Classification with Detailed Explanations
 ```powershell
-# Classify a small sample
-python mainClassify.py --num-events 10
+# Navigate to classification system
+cd classification_system
 
-# Classify more events (takes longer)
-python mainClassify.py --num-events 50
+# Classify 5 events with 7-section detailed scientific reports
+python enhanced_classifier.py --num-events 5
 
-# Results saved to: claude_classified_results_detailed.json
+# Results saved to:
+# - results/classification_results.json (summary)
+# - explanations/event_*_explanation.md (detailed reports)
 ```
+
+**Each event gets:**
+- ✅ AI Classification + Confidence
+- ✅ 7-Section Scientific Report:
+  1. Classification Justification
+  2. Feature Analysis
+  3. Physics Interpretation
+  4. Comparison with XENONnT/LZ
+  5. Confidence Assessment
+  6. Follow-up Recommendations
+  7. Literature References
 
 ### 5. Launch Web Application
 ```powershell
