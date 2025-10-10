@@ -48,11 +48,14 @@ All colors MUST be HSL.
     --refined-purple: 270 91% 65%;
     --refined-blue: 217 91% 60%;
     --refined-cyan: 186 100% 58%;
+
+    /* Additional Design System Variables */
     --card-dark: 215 25% 12%;
     --text-light: 220 9% 66%;
     --text-medium: 220 14% 83%;
     --border-subtle: 215 20% 22%;
 
+    /* Sidebar Variables */
     --sidebar-background: 250 40% 10%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 270 70% 60%;
@@ -61,6 +64,27 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 250 30% 20%;
     --sidebar-ring: 270 70% 60%;
+  }
+}
+
+/* Custom scrollbar styling for the report preview */
+@layer utilities {
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgb(26, 31, 46);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(51, 65, 85);
+    border-radius: 4px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(71, 85, 105);
   }
 }
 
