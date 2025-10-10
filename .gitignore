@@ -11,8 +11,21 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
-eggs/
+downloa# Data Science specific
+# Large datasets
+*.csv
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.parquet
+*.feather
+
+# Dataset folder contents (but keep folder structure)
+dataset/*.csv
+dataset/*.json
+dataset/*.h5
+dataset/*.pkl
 .eggs/
 lib/
 lib64/

@@ -1,0 +1,2 @@
+# This file ensures the dataset folder is tracked by git
+# while ignoring the actual dataset files
