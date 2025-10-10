@@ -544,6 +544,13 @@ ${selectedSections.includes('Proposed Follow-ups') ? 'The proposed follow-up pro
 
               {/* Generate Button */}
               <div className="mt-8">
+                {reportGenerated && hasConfigChanged() && (
+                  <div className="mb-3 p-2 bg-yellow-600/20 border border-yellow-600/30 rounded-lg text-center">
+                    <p className="text-sm text-yellow-300">
+                      ⚠️ Configuration changed since last report
+                    </p>
+                  </div>
+                )}
                 <button
                   onClick={generateReport}
                   disabled={isGenerating}
