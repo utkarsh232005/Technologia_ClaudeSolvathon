@@ -389,7 +389,7 @@ def parse_args() -> argparse.Namespace:
 def create_api_prompt_and_schema(event_data: Dict[str, Any]) -> tuple:
     """
     Creates a detailed, structured prompt and JSON schema to guide the LLM's reasoning
-    based on the updated S2/S1 classification bands.
+    based on the updated S2/S1 classification bands with enhanced physics-based analysis.
     """
     
     # Select only the most relevant physics features to minimize input tokens
@@ -399,39 +399,139 @@ def create_api_prompt_and_schema(event_data: Dict[str, Any]) -> tuple:
         's1_area_PE': event_data.get('s1_area_PE'),
         's2_area_PE': event_data.get('s2_area_PE'),
         's2_over_s1_ratio': event_data.get('s2_over_s1_ratio'),
+        'log10_s2_over_s1': event_data.get('log10_s2_over_s1'),
+        'position_x_mm': event_data.get('position_x_mm'),
+        'position_y_mm': event_data.get('position_y_mm'),
         'position_z_mm': event_data.get('position_z_mm'),
+        'drift_time_us': event_data.get('drift_time_us'),
+        's1_width_ns': event_data.get('s1_width_ns'),
+        's2_width_us': event_data.get('s2_width_us'),
         'event_quality': event_data.get('event_quality'),
+        'pile_up_flag': event_data.get('pile_up_flag'),
+        'interaction_type': event_data.get('interaction_type'),
     }
 
-    # System instruction for persona and structured output - UPDATED WITH NEW RULES
+    # System instruction for persona and structured output - ENHANCED WITH DETAILED PHYSICS
     system_prompt = (
-        "You are a leading particle physicist specializing in dark matter detection at a liquid xenon TPC. "
-        "Your task is to analyze the provided particle event data and provide a classification and detailed reasoning. "
-        "The classification must strictly adhere to the following S2/S1 ratio bands: "
-        "1. High S2/S1 (>5): Classify as Background (Electronic Recoil - ER). "
-        "2. Medium S2/S1 (2.0 to 4.0): Classify as WIMP-like (Nuclear Recoil - NR). "
-        "3. Low S2/S1 (<2.0): Classify as Axion-like (Exotic Electron Recoil - ER). "
-        "Events falling exactly on the boundary or between specified bands (e.g., 4.0 to 5.0) should be classified as the most probable neighboring type with reduced confidence."
+        "You are a senior particle physicist at the XENONnT dark matter detection experiment. "
+        "Your expertise includes liquid xenon TPCs, nuclear and electronic recoil discrimination, "
+        "and statistical analysis of rare event searches.\n\n"
+        
+        "**CLASSIFICATION RULES (S2/S1 Ratio-Based):**\n"
+        "1. **High S2/S1 (>200):** Background (Electronic Recoil - ER)\n"
+        "   - Caused by gamma rays, beta decays, Compton scattering\n"
+        "   - Higher ionization yield, more free electrons escape recombination\n"
+        "   - Typical sources: Kr-85, Rn-222, detector materials\n\n"
+        
+        "2. **Medium S2/S1 (10-50):** WIMP-like (Nuclear Recoil - NR)\n"
+        "   - Characteristic of WIMP-nucleus elastic scattering\n"
+        "   - Lower ionization yield due to denser ionization tracks\n"
+        "   - Energy typically 1-50 keV (WIMP search window)\n"
+        "   - Must be single-scatter event in fiducial volume\n\n"
+        
+        "3. **Very Low S2/S1 (<10):** Axion-like or Exotic Signal\n"
+        "   - Potentially axion-electron coupling or other exotic physics\n"
+        "   - May show energy peaks at specific values (e.g., 14.4 keV for axions)\n"
+        "   - Requires careful verification against detector artifacts\n\n"
+        
+        "**ADDITIONAL ANALYSIS FACTORS:**\n"
+        "- **Energy Range:** WIMPs expected at 1-50 keV; backgrounds across full spectrum\n"
+        "- **Position (Fiducialization):** Events near detector walls (z<50mm or z>1300mm) likely background\n"
+        "- **Pulse Shape:** S1 width and S2 width can indicate event type\n"
+        "- **Event Quality:** Quality <0.5 suggests detector noise or artifacts\n"
+        "- **Pile-up Flag:** Multiple interactions increase background probability\n"
+        "- **Drift Time:** Consistent with event position; anomalies suggest electronic noise\n\n"
+        
+        "**REASONING REQUIREMENTS:**\n"
+        "Your reasoning MUST include:\n"
+        "1. Quantitative S2/S1 ratio analysis with comparison to expected bands\n"
+        "2. Energy assessment (is it in WIMP search window?)\n"
+        "3. Position analysis (fiducial volume check)\n"
+        "4. Pulse shape and timing considerations\n"
+        "5. Comparison with known XENONnT/LUX-ZEPLIN published results\n"
+        "6. Discussion of uncertainties and alternative interpretations\n"
+        "7. Reference to relevant physics principles (recombination, quenching factors, etc.)"
     )
 
-    # User query
+    # User query - ENHANCED WITH DETAILED INSTRUCTIONS
     user_query = (
-        f"Analyze this particle event data and classify it according to the three S2/S1 bands (High, Medium, Low). You MUST output a single JSON object. "
-        f"Event Data: {json.dumps(features)}. "
-        f"Analyze the S2/S1 ratio, Recoil Energy, and Position (z-mm). "
-        f"Classify as one of: 'Background (ER)', 'WIMP-like (NR)', 'Axion-like (ER)', 'Novel Anomaly'."
+        f"**PARTICLE EVENT ANALYSIS REQUEST**\n\n"
+        f"Analyze this dark matter detector event with rigorous scientific reasoning.\n\n"
+        f"**EVENT DATA:**\n{json.dumps(features, indent=2)}\n\n"
+        
+        f"**ANALYSIS STEPS:**\n"
+        f"1. Calculate and evaluate S2/S1 ratio against classification bands\n"
+        f"2. Assess recoil energy in context of WIMP search (1-50 keV optimal)\n"
+        f"3. Check fiducial volume position (x,y,z) - reject if near boundaries\n"
+        f"4. Analyze pulse characteristics (widths, drift time consistency)\n"
+        f"5. Evaluate event quality and pile-up indicators\n"
+        f"6. Compare against known detector response and published results\n"
+        f"7. Identify any anomalies or unusual features\n\n"
+        
+        f"**CLASSIFICATION OPTIONS:**\n"
+        f"- 'Background (ER)' - Electronic recoil from gamma/beta radiation\n"
+        f"- 'WIMP-like (NR)' - Nuclear recoil consistent with dark matter\n"
+        f"- 'Axion-like (ER)' - Exotic signal with very low S2/S1\n"
+        f"- 'Novel Anomaly' - Unusual event requiring further investigation\n\n"
+        
+        f"Provide comprehensive, multi-paragraph scientific reasoning with specific numerical references."
     )
     
-    # JSON Schema definition for forced structured output
+    # JSON Schema definition for forced structured output - ENHANCED
     response_schema = {
         "type": "OBJECT",
         "properties": {
-            "classification": {"type": "STRING", "description": "The determined event type (e.g., WIMP-like (NR), Background (ER))."},
-            "confidence": {"type": "NUMBER", "description": "Confidence score from 0.0 to 1.0."},
-            "reasoning": {"type": "STRING", "description": "A detailed, multi-sentence scientific explanation justifying the classification based on the event's features and physics rules. Must be comprehensive."},
-            "follow_up_action": {"type": "STRING", "description": "A single, actionable suggestion for a research team (e.g., Re-check veto system; Increase energy threshold)."}
+            "classification": {
+                "type": "STRING", 
+                "description": "The determined event type: 'Background (ER)', 'WIMP-like (NR)', 'Axion-like (ER)', or 'Novel Anomaly'"
+            },
+            "confidence": {
+                "type": "NUMBER", 
+                "description": "Confidence score from 0.0 to 1.0 based on how well event matches classification criteria"
+            },
+            "s2_s1_analysis": {
+                "type": "STRING",
+                "description": "Detailed analysis of S2/S1 ratio: numerical value, which band it falls in, comparison to expected ranges for each particle type, and what this indicates about the interaction physics"
+            },
+            "energy_analysis": {
+                "type": "STRING",
+                "description": "Analysis of recoil energy: is it in WIMP search window (1-50 keV)? Does it match known background lines? Any unusual energy signatures?"
+            },
+            "position_analysis": {
+                "type": "STRING",
+                "description": "Spatial analysis: is event in fiducial volume? Distance from walls? Any position-dependent backgrounds? Drift time consistency check"
+            },
+            "pulse_characteristics": {
+                "type": "STRING",
+                "description": "Analysis of S1/S2 pulse shapes, widths, and timing: do they match expected profiles for this particle type? Any anomalies?"
+            },
+            "physics_interpretation": {
+                "type": "STRING",
+                "description": "Deep physics reasoning: type of interaction (elastic scattering, Compton, photoelectric), recombination probability, quenching factors, comparison with detector calibration data"
+            },
+            "comparison_with_literature": {
+                "type": "STRING",
+                "description": "How does this event compare with published XENONnT, LUX-ZEPLIN, or PandaX results? Does it fit known background models or signal expectations?"
+            },
+            "alternative_interpretations": {
+                "type": "STRING",
+                "description": "What other particle types or detector effects could explain this event? Why were they ruled out or given lower probability?"
+            },
+            "confidence_factors": {
+                "type": "STRING",
+                "description": "What specific features increase or decrease classification confidence? What uncertainties remain?"
+            },
+            "follow_up_recommendations": {
+                "type": "STRING",
+                "description": "Specific, actionable suggestions for experimentalists: verification checks, cross-correlations, additional cuts, or further investigation needed"
+            }
         },
-        "required": ["classification", "confidence", "reasoning", "follow_up_action"]
+        "required": [
+            "classification", "confidence", "s2_s1_analysis", "energy_analysis", 
+            "position_analysis", "pulse_characteristics", "physics_interpretation",
+            "comparison_with_literature", "alternative_interpretations", 
+            "confidence_factors", "follow_up_recommendations"
+        ]
     }
     
     return system_prompt, user_query, response_schema
@@ -545,12 +645,32 @@ def run_api_pipeline(df: pd.DataFrame, num_events: int) -> None:
         evt['api_analysis'] = api_analysis
         out.append(evt)
         
-        # Print the key results directly
+        # Print the key results directly - ENHANCED OUTPUT
         if isinstance(api_analysis, dict) and 'classification' in api_analysis:
-            # FIX: Print the full reasoning without truncation
-            print(f"Classification: {api_analysis['classification']} (Conf: {api_analysis['confidence']:.2f})")
-            print(f"Reasoning: {api_analysis['reasoning']}") # Print the full reasoning here
-            print(f"Follow-up: {api_analysis['follow_up_action']}")
+            print(f"\n{'='*70}")
+            print(f"CLASSIFICATION: {api_analysis['classification']}")
+            print(f"CONFIDENCE: {api_analysis['confidence']:.2f}")
+            print(f"{'='*70}")
+            
+            # Print all reasoning sections
+            reasoning_sections = [
+                ('S2/S1 ANALYSIS', api_analysis.get('s2_s1_analysis')),
+                ('ENERGY ANALYSIS', api_analysis.get('energy_analysis')),
+                ('POSITION ANALYSIS', api_analysis.get('position_analysis')),
+                ('PULSE CHARACTERISTICS', api_analysis.get('pulse_characteristics')),
+                ('PHYSICS INTERPRETATION', api_analysis.get('physics_interpretation')),
+                ('COMPARISON WITH LITERATURE', api_analysis.get('comparison_with_literature')),
+                ('ALTERNATIVE INTERPRETATIONS', api_analysis.get('alternative_interpretations')),
+                ('CONFIDENCE FACTORS', api_analysis.get('confidence_factors')),
+                ('FOLLOW-UP RECOMMENDATIONS', api_analysis.get('follow_up_recommendations'))
+            ]
+            
+            for section_name, content in reasoning_sections:
+                if content:
+                    print(f"\n{section_name}:")
+                    print(f"{content}")
+            
+            print(f"\n{'='*70}\n")
         else:
             print(f"API Error or Malformed Response: {api_analysis}")
             
