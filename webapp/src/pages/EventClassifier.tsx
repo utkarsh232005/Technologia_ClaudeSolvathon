@@ -722,23 +722,21 @@ const EventClassifier = () => {
                       </CollapsibleTrigger>
                       <CollapsibleContent className="mt-3">
                         <div className="space-y-4">
-                          {/* Main Analysis Tree */}
+                          {/* Dynamic Analysis Tree - Show all available reasoning fields */}
                           <div className="bg-muted/10 rounded-lg p-4 font-mono text-sm">
                             <div className="flex items-center justify-between mb-3">
-                              <h4 className="font-semibold font-sans">Analysis Tree</h4>
+                              <h4 className="font-semibold font-sans">Full Analysis Tree</h4>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => {
                                   const reasoning = classificationResult?.analysis?.reasoning;
                                   if (reasoning) {
-                                    copyToClipboard(`Event Classification Analysis:
-├─ Energy Analysis: ${reasoning.energyAnalysis}
-├─ S2/S1 Analysis: ${reasoning.s2s1Analysis}
-├─ Position Analysis: ${reasoning.positionAnalysis}
-├─ Pulse Characteristics: ${reasoning.pulseCharacteristics}
-├─ Physics Interpretation: ${reasoning.physicsInterpretation}
-└─ Confidence: ${classificationResult.classification?.confidence}%`);
+                                    const allFields = Object.entries(reasoning)
+                                      .filter(([_, value]) => value)
+                                      .map(([key, value]) => `├─ ${key}: ${value}`)
+                                      .join('\n');
+                                    copyToClipboard(`Event Classification Analysis:\n${allFields}\n└─ Confidence: ${classificationResult.classification?.confidence}%`);
                                   }
                                 }}
                               >
@@ -747,187 +745,38 @@ const EventClassifier = () => {
                             </div>
 
                             <div className="text-green-400">
-                              <div className="cursor-pointer" onClick={() => toggleSection('energy')}>
-                                <span className={expandedSections.energy ? 'text-blue-400' : ''}>
-                                  ├─ Energy Analysis
-                                </span>
-                              </div>
-                              {expandedSections.energy && (
-                                <div className="ml-2 text-gray-300 whitespace-pre-wrap">
-                                  {classificationResult?.analysis?.reasoning?.energyAnalysis || 'No energy analysis available'}
-                                </div>
-                              )}
+                              {/* Dynamically render all available reasoning fields */}
+                              {classificationResult?.analysis?.reasoning && Object.entries(classificationResult.analysis.reasoning).map(([key, value], index, array) => {
+                                if (!value) return null; // Skip empty fields
 
-                              <div className="cursor-pointer" onClick={() => toggleSection('s2s1')}>
-                                <span className={expandedSections.s2s1 ? 'text-blue-400' : ''}>
-                                  ├─ S2/S1 Signal Analysis
-                                </span>
-                              </div>
-                              {expandedSections.s2s1 && (
-                                <div className="ml-2 text-gray-300 whitespace-pre-wrap">
-                                  {classificationResult?.analysis?.reasoning?.s2s1Analysis || 'No S2/S1 analysis available'}
-                                </div>
-                              )}
+                                const isLast = index === array.length - 1;
+                                const displayName = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                                const sectionKey = key.toLowerCase();
 
-                              <div className="cursor-pointer" onClick={() => toggleSection('position')}>
-                                <span className={expandedSections.position ? 'text-blue-400' : ''}>
-                                  ├─ Position Analysis
-                                </span>
-                              </div>
-                              {expandedSections.position && (
-                                <div className="ml-2 text-gray-300 whitespace-pre-wrap">
-                                  {classificationResult?.analysis?.reasoning?.positionAnalysis || 'No position analysis available'}
-                                </div>
-                              )}
+                                return (
+                                  <div key={key}>
+                                    <div className="cursor-pointer" onClick={() => toggleSection(sectionKey)}>
+                                      <span className={expandedSections[sectionKey] ? 'text-blue-400' : ''}>
+                                        {isLast ? '└─' : '├─'} {displayName}
+                                      </span>
+                                    </div>
+                                    {expandedSections[sectionKey] && (
+                                      <div className="ml-2 text-gray-300 whitespace-pre-wrap mb-2">
+                                        {value}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
 
-                              <div className="cursor-pointer" onClick={() => toggleSection('pulse')}>
-                                <span className={expandedSections.pulse ? 'text-blue-400' : ''}>
-                                  ├─ Pulse Characteristics
-                                </span>
-                              </div>
-                              {expandedSections.pulse && (
-                                <div className="ml-2 text-gray-300 whitespace-pre-wrap">
-                                  {classificationResult?.analysis?.reasoning?.pulseCharacteristics || 'No pulse analysis available'}
-                                </div>
-                              )}
-
-                              <div className="text-yellow-400">
+                              <div className="text-yellow-400 mt-3">
                                 └─ <span className="font-bold">
-                                  {classificationResult?.classification?.type || 'Unknown'} ({classificationResult?.classification?.confidence}% confidence)
+                                  Final Classification: {classificationResult?.classification?.type || 'Unknown'} ({classificationResult?.classification?.confidence}% confidence)
                                 </span>
                               </div>
                             </div>
                           </div>
 
-                          {/* Physics Interpretation */}
-                          <Collapsible open={expandedSections.physics} onOpenChange={() => toggleSection('physics')}>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" className="w-full justify-between text-left">
-                                <span className="font-semibold">Physics Interpretation</span>
-                                <div className="flex items-center gap-2">
-                                  <Copy
-                                    className="w-3 h-3"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(classificationResult?.analysis?.reasoning?.physicsInterpretation || 'No physics interpretation available');
-                                    }}
-                                  />
-                                  <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.physics ? 'rotate-90' : ''}`} />
-                                </div>
-                              </Button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
-                                <div className="whitespace-pre-wrap text-muted-foreground">
-                                  {classificationResult?.analysis?.reasoning?.physicsInterpretation || 'No physics interpretation available'}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-
-                          {/* Related Literature */}
-                          <Collapsible open={expandedSections.literature} onOpenChange={() => toggleSection('literature')}>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" className="w-full justify-between text-left">
-                                <span className="font-semibold">Literature Comparison</span>
-                                <div className="flex items-center gap-2">
-                                  <Copy
-                                    className="w-3 h-3"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(classificationResult?.analysis?.reasoning?.comparisonWithLiterature || 'No literature comparison available');
-                                    }}
-                                  />
-                                  <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.literature ? 'rotate-90' : ''}`} />
-                                </div>
-                              </Button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
-                                <div className="whitespace-pre-wrap text-muted-foreground">
-                                  {classificationResult?.analysis?.reasoning?.comparisonWithLiterature || 'No literature comparison available'}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-
-                          {/* Alternative Hypotheses */}
-                          <Collapsible open={expandedSections.alternatives} onOpenChange={() => toggleSection('alternatives')}>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" className="w-full justify-between text-left">
-                                <span className="font-semibold">Alternative Interpretations</span>
-                                <div className="flex items-center gap-2">
-                                  <Copy
-                                    className="w-3 h-3"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(classificationResult?.analysis?.reasoning?.alternativeInterpretations || 'No alternative interpretations available');
-                                    }}
-                                  />
-                                  <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.alternatives ? 'rotate-90' : ''}`} />
-                                </div>
-                              </Button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
-                                <div className="whitespace-pre-wrap text-muted-foreground">
-                                  {classificationResult?.analysis?.reasoning?.alternativeInterpretations || 'No alternative interpretations available'}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-
-                          {/* Confidence Factors */}
-                          <Collapsible open={expandedSections.confidence} onOpenChange={() => toggleSection('confidence')}>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" className="w-full justify-between text-left">
-                                <span className="font-semibold">Confidence Factors</span>
-                                <div className="flex items-center gap-2">
-                                  <Copy
-                                    className="w-3 h-3"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(classificationResult?.analysis?.reasoning?.confidenceFactors || 'No confidence factors available');
-                                    }}
-                                  />
-                                  <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.confidence ? 'rotate-90' : ''}`} />
-                                </div>
-                              </Button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
-                                <div className="whitespace-pre-wrap text-muted-foreground">
-                                  {classificationResult?.analysis?.reasoning?.confidenceFactors || 'No confidence factors available'}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
-
-                          {/* Suggested Follow-ups */}
-                          <Collapsible open={expandedSections.followups} onOpenChange={() => toggleSection('followups')}>
-                            <CollapsibleTrigger asChild>
-                              <Button variant="ghost" className="w-full justify-between text-left">
-                                <span className="font-semibold">Follow-up Recommendations</span>
-                                <div className="flex items-center gap-2">
-                                  <Copy
-                                    className="w-3 h-3"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      copyToClipboard(classificationResult?.analysis?.reasoning?.followUpRecommendations || 'No follow-up recommendations available');
-                                    }}
-                                  />
-                                  <ChevronRight className={`w-4 h-4 transition-transform ${expandedSections.followups ? 'rotate-90' : ''}`} />
-                                </div>
-                              </Button>
-                            </CollapsibleTrigger>
-                            <CollapsibleContent>
-                              <div className="bg-muted/10 rounded-lg p-3 text-sm">
-                                <div className="whitespace-pre-wrap text-muted-foreground">
-                                  {classificationResult?.analysis?.reasoning?.followUpRecommendations || 'No follow-up recommendations available'}
-                                </div>
-                              </div>
-                            </CollapsibleContent>
-                          </Collapsible>
                         </div>
                       </CollapsibleContent>
                     </Collapsible>
