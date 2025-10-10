@@ -108,10 +108,10 @@
     "true_label": "Background",
     "event_data": {
       "recoil_energy_keV": 1.071677,
-      "s2_over_s1_ratio": NaN,
-      "s1_area_PE": NaN,
+      "s2_over_s1_ratio": null,
+      "s1_area_PE": null,
       "s2_area_PE": 13.432776,
-      "s1_width_ns": NaN,
+      "s1_width_ns": null,
       "s2_width_ns": null,
       "drift_time_us": 53.315083
     },
@@ -160,10 +160,10 @@
     "true_label": "WIMP-like",
     "event_data": {
       "recoil_energy_keV": 5.101134,
-      "s2_over_s1_ratio": NaN,
-      "s1_area_PE": NaN,
+      "s2_over_s1_ratio": null,
+      "s1_area_PE": null,
       "s2_area_PE": 10.437084,
-      "s1_width_ns": NaN,
+      "s1_width_ns": null,
       "s2_width_ns": null,
       "drift_time_us": 501.00328
     },
@@ -186,10 +186,10 @@
     "true_label": "Sterile-Neutrino",
     "event_data": {
       "recoil_energy_keV": 2.416885,
-      "s2_over_s1_ratio": NaN,
-      "s1_area_PE": NaN,
+      "s2_over_s1_ratio": null,
+      "s1_area_PE": null,
       "s2_area_PE": 2.006784,
-      "s1_width_ns": NaN,
+      "s1_width_ns": null,
       "s2_width_ns": null,
       "drift_time_us": 617.920419
     },
@@ -210,6 +210,7 @@
   {
     "event_id": 9,
     "true_label": "Axion-like",
+
     "event_data": {
       "recoil_energy_keV": 3.539941,
       "s2_over_s1_ratio": 1.029506,
@@ -248,7 +249,7 @@
     "api_analysis": {
       "classification": "Error",
       "confidence": 0.0,
-      "reasoning": "429 Client Error: Too Many Requests for url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyDIzebVSZGcbIRgEZ-So6YeJCiKC94jHJA"
+      "reasoning": "429 Client Error: Too Many Requests for url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=[API_KEY_REMOVED]"
     },
     "importance_analysis": {
       "s2_s1_ratio_importance": 0,
@@ -256,7 +257,7 @@
       "pulse_shape_importance": 0,
       "position_importance": 0,
       "drift_time_importance": 0,
-      "summary_reasoning": "429 Client Error: Too Many Requests for url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=AIzaSyDIzebVSZGcbIRgEZ-So6YeJCiKC94jHJA"
+      "summary_reasoning": "429 Client Error: Too Many Requests for url: https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=[API_KEY_REMOVED]"
     }
   }
 ]

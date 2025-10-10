@@ -99,7 +99,7 @@ visualization_system/
 Make sure your Gemini API key is set in `../.env`:
 
 ```properties
-GEMINI_API_KEY=your_actual_api_key_here
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 ```
 
 Get your key from: https://makersuite.google.com/app/apikey
