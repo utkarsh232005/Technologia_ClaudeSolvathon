@@ -24,8 +24,8 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables. Please set it in .env file.")
 
-API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}"
-MODEL_NAME = "gemini-1.5-flash"
+API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key={}"
+MODEL_NAME = "gemini-2.0-flash-exp"
 
 # Paths
 CSV_PATH = Path('../dataset/dark_matter_synthetic_dataset.csv')
@@ -99,73 +99,82 @@ Provide classification and confidence (0.0 to 1.0).
 
 def generate_detailed_explanation(event_data: Dict[str, Any], classification_result: Dict[str, Any]) -> str:
     """
-    Generate detailed 7-section scientific explanation for the classification
+    Generate detailed 7-section explanation in SIMPLE, EASY-TO-UNDERSTAND language
     """
     
-    prompt = f"""You are writing a detailed scientific explanation for a dark matter detection experiment.
+    prompt = f"""You are explaining a dark matter detector event to someone who is smart but not a particle physicist. Use SIMPLE, CLEAR language that anyone can understand.
 
-EVENT CLASSIFICATION RESULT:
+EVENT RESULT:
 - Classification: {classification_result['classification']}
 - Confidence: {classification_result['confidence']:.2%}
 
-EVENT DATA:
-- Recoil Energy: {event_data.get('recoil_energy_keV', 'N/A')} keV
-- S1 Signal: {event_data.get('s1_area_PE', 'N/A')} PE
-- S2 Signal: {event_data.get('s2_area_PE', 'N/A')} PE
-- S2/S1 Ratio: {event_data.get('s2_over_s1_ratio', 'N/A')}
-- Pulse Shape (S1 width): {event_data.get('s1_width_ns', 'N/A')} ns
-- Position: ({event_data.get('position_x_mm', 0):.1f}, {event_data.get('position_y_mm', 0):.1f}, {event_data.get('position_z_mm', 0):.1f}) mm
-- Drift Time: {event_data.get('drift_time_us', 'N/A')} μs
-- True Label: {event_data.get('label', 'Unknown')}
+DETECTOR READINGS:
+- Energy Released: {event_data.get('recoil_energy_keV', 'N/A')} keV (think of it like how hard something hit)
+- First Light Flash (S1): {event_data.get('s1_area_PE', 'N/A')} units
+- Second Light Flash (S2): {event_data.get('s2_area_PE', 'N/A')} units
+- S2/S1 Ratio: {event_data.get('s2_over_s1_ratio', 'N/A')} (this tells us WHAT hit the detector)
+- How Long the Flash Lasted: {event_data.get('s1_width_ns', 'N/A')} nanoseconds
+- Where It Happened: ({event_data.get('position_x_mm', 0):.1f}, {event_data.get('position_y_mm', 0):.1f}, {event_data.get('position_z_mm', 0):.1f}) mm inside the detector
+- Actual Answer: {event_data.get('label', 'Unknown')}
 
-Write a comprehensive scientific explanation with these 7 sections:
+Write a SIMPLE explanation with these 7 sections. Use everyday language, short sentences, and clear analogies:
 
-## 1. CLASSIFICATION JUSTIFICATION
-Explain step-by-step why this classification was chosen.
-Reference specific physics principles (ionization, scintillation, recombination).
+## 1. WHY WE CHOSE THIS CLASSIFICATION
+Explain in simple terms why we think this is what hit the detector.
+Use analogies like "imagine dropping different balls into water - each makes different ripples"
+Keep it under 150 words.
 
-## 2. FEATURE ANALYSIS
-For each key feature:
-- **S2/S1 Ratio ({event_data.get('s2_over_s1_ratio', 'N/A')})**: What does this value indicate? How does it support the classification?
-- **Energy ({event_data.get('recoil_energy_keV', 'N/A')} keV)**: Is it in the WIMP search window? Consistent with backgrounds?
-- **Pulse Shape**: What does the S1 width tell us about the interaction?
+## 2. WHAT THE NUMBERS TELL US
+Break down each measurement:
+- **S2/S1 Ratio ({event_data.get('s2_over_s1_ratio', 'N/A')})**: Is this ratio high, medium, or low? What does that mean? Use simple comparisons.
+- **Energy ({event_data.get('recoil_energy_keV', 'N/A')} keV)**: Is this a lot or a little energy? What would create this?
+- **Flash Duration**: Did the light last long or short? Why does that matter?
 
-## 3. PHYSICS INTERPRETATION
-- What type of interaction likely occurred? (elastic scattering, Compton, photoelectric)
-- Nuclear recoil vs electronic recoil analysis
-- Consistency with liquid xenon detector response models
-- Recombination probability and quenching factors
+Keep each point to 2-3 sentences max.
 
-## 4. COMPARISON WITH KNOWN RESULTS
-Compare this event signature with:
-- **XENONnT**: Published S2/S1 discrimination bands and energy spectra
-- **LUX-ZEPLIN (LZ)**: Background models and signal expectations
-- **Known Background Sources**: Beta decay, gamma rays, neutrons
+## 3. WHAT ACTUALLY HAPPENED
+Explain the physics like you're telling a story:
+- What kind of particle probably hit the detector?
+- Did it hit a nucleus (the heavy center) or an electron (the light outer part)?
+- Why did it create the pattern we see?
 
-## 5. CONFIDENCE ASSESSMENT
-Explain why confidence is {classification_result['confidence']:.0%}:
-- What factors increase confidence? (clear S2/S1 separation, expected energy range)
-- What uncertainties remain? (position effects, detector systematics)
-- What could change the classification? (alternative explanations)
+Use analogies - like bowling balls vs ping pong balls hitting things.
 
-## 6. FOLLOW-UP RECOMMENDATIONS
-Suggest 5 specific actions:
-1. Cross-check against fiducial volume cuts
-2. Verify pulse shape discrimination parameters
-3. Check for pile-up or multiple scatter
-4. Compare with calibration source data
-5. Statistical analysis with similar events
+## 4. COMPARING TO OTHER EXPERIMENTS
+Other labs have seen similar things. In simple terms:
+- **XENONnT Lab**: What have they seen that's similar?
+- **LUX-ZEPLIN Lab**: How does our event compare?
+- **Known "Noise"**: Could this be something ordinary like radiation from rocks?
 
-## 7. LITERATURE REFERENCES
-Cite 5 relevant references:
-1. E. Aprile et al. (XENONnT Collaboration), "First Dark Matter Search with Nuclear Recoils..."
-2. J. Aalbers et al. (LUX-ZEPLIN), "First Dark Matter Search Results..."
-3. P. Agnes et al., "Low-Mass Dark Matter Search with DarkSide-50"
-4. D.S. Akerib et al., "Signal yields, energy resolution, and recombination..."
-5. E. Aprile et al., "Energy resolution and linearity in the keV to MeV range..."
+Keep it conversational.
 
-Format as clean markdown with clear headers and bullet points.
-Be specific, technical, and reference actual physics principles.
+## 5. HOW SURE ARE WE?
+We're {classification_result['confidence']:.0%} confident. Explain why:
+- What makes us MORE sure? (the numbers match perfectly, everything looks right)
+- What makes us LESS sure? (some readings are borderline, could be two things)
+- What could change our mind?
+
+Like a detective explaining their case.
+
+## 6. WHAT TO DO NEXT
+5 simple next steps to verify this result:
+1. Check if it happened in the "good zone" of the detector
+2. Look at how the light pulse changed over time
+3. Make sure two particles didn't hit at the same time
+4. Compare with our calibration tests
+5. Find other similar events and see if they match
+
+Each point should be one clear sentence.
+
+## 7. SCIENTIFIC PAPERS TO READ
+5 references in simple format:
+1. XENONnT team - "How we hunt for dark matter" (explain what this paper is about)
+2. LUX-ZEPLIN team - "Our first results" (one sentence on what they found)
+3. DarkSide team - "Looking for low-mass particles" (why this matters)
+4. General detector paper - "How our detector works" (explain the basics)
+5. Calibration paper - "Testing our equipment" (why we need this)
+
+IMPORTANT: Use simple words, short sentences, clear analogies. NO jargon without explaining it. Make it readable by a high school student.
 """
 
     payload = {
@@ -222,21 +231,28 @@ def process_events(df: pd.DataFrame, num_events: int = 5):
         print(f"  ✓ Classification: {classification['classification']} (Confidence: {classification['confidence']:.2%})")
         
         # Step 2: Generate detailed explanation
-        print("  ⏳ Generating detailed scientific explanation...")
+        print("  ⏳ Generating detailed explanation in simple language...")
         explanation = generate_detailed_explanation(event_dict, classification)
-        print(f"  ✓ Explanation generated ({len(explanation)} characters)")
+        print(f"  ✓ Explanation generated!\n")
         
-        # Step 3: Save explanation
+        # Display the explanation immediately
+        print(f"\n{'╔' + '═'*78 + '╗'}")
+        print(f"║ {'DETAILED EXPLANATION - EVENT ' + str(event_id):^76} ║")
+        print(f"{'╚' + '═'*78 + '╝'}\n")
+        print(explanation)
+        print(f"\n{'─'*80}\n")
+        
+        # Step 3: Save explanation to file (optional backup)
         explanation_file = EXPLANATIONS_DIR / f"event_{event_id}_explanation.md"
         with open(explanation_file, 'w', encoding='utf-8') as f:
-            f.write(f"# Event {event_id} - Detailed Scientific Analysis\n\n")
+            f.write(f"# Event {event_id} - Easy-to-Understand Analysis\n\n")
             f.write(f"**Classification:** {classification['classification']}  \n")
             f.write(f"**Confidence:** {classification['confidence']:.2%}  \n")
             f.write(f"**True Label:** {event.get('label', 'Unknown')}  \n\n")
             f.write("---\n\n")
             f.write(explanation)
         
-        print(f"  ✓ Saved to: {explanation_file}")
+        print(f"  💾 Backup saved to: {explanation_file}")
         
         # Store result
         result = {
