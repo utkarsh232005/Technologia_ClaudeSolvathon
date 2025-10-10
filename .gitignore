@@ -11,8 +11,18 @@ __pycache__/
 build/
 develop-eggs/
 dist/
-downloads/
-eggs/
+downloa# Data Science specific
+# Large datasets (but allow dataset folder to be tracked)
+# Note: Dataset folder files are now tracked for project sharing
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.parquet
+*.feather
+
+# Allow dataset folder files to be tracked
+# dataset/ folder contents will be included in git
 .eggs/
 lib/
 lib64/
