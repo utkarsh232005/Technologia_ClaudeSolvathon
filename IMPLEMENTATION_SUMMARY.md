@@ -70,7 +70,8 @@
 cd Technologia_ClaudeSolvathon
 
 # Create .env file with your API key
-echo "GEMINI_API_KEY=AIzaSyBsnlMqfPPDGky13ETi6ycSPv3Jadhv8CI" > .env
+# Get your API key from: https://makersuite.google.com/app/apikey
+echo "GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE" > .env
 ```
 
 ### Step 2: Run Enhanced Classification

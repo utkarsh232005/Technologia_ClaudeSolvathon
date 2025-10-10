@@ -4,7 +4,8 @@
 
 ```bash
 # 1. Set API key in .env file
-echo "GEMINI_API_KEY=AIzaSyBsnlMqfPPDGky13ETi6ycSPv3Jadhv8CI" > .env
+# Get your API key from: https://makersuite.google.com/app/apikey
+echo "GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE" > .env
 
 # 2. Run classification
 cd Technologia_ClaudeSolvathon

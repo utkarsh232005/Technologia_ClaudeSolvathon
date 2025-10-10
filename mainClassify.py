@@ -375,8 +375,8 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("GEMINI_API_KEY not found in environment variables. Please set it in .env file.")
 
-API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={}"
-MODEL_NAME = "gemini-2.5-flash" # Cost-effective model for detailed reasoning
+API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={}"
+MODEL_NAME = "gemini-1.5-flash" # Stable model
 
 CSV = 'dataset/dark_matter_synthetic_dataset.csv'
 
