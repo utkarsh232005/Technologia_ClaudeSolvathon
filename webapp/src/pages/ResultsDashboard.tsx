@@ -3,6 +3,8 @@ import PageLayout from '@/components/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { 
   PieChart, 
   Pie, 
@@ -18,7 +20,7 @@ import {
   Scatter, 
   ResponsiveContainer 
 } from 'recharts';
-import { Download, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { Download, Eye, EyeOff, AlertTriangle, Search, Check, Clock, Filter } from 'lucide-react';
 
 // Mock data for demonstrations
 const mockEventData = [
@@ -34,11 +36,81 @@ const mockEventData = [
   { id: 10, energy: 11.3, s2s1Ratio: 8.7, classification: 'WIMP', confidence: 84 },
 ];
 
+// Mock anomaly data
+const mockAnomalies = [
+  {
+    id: 'A001',
+    eventId: 'EVT-2024-1001',
+    severity: 'Critical',
+    score: 0.92,
+    energy: 45.2,
+    s2s1Ratio: 125.3,
+    detectionTime: '2024-10-10T14:23:15Z',
+    features: ['Extreme S2/S1 ratio', 'Multiple scatter signature', 'Edge event'],
+    hypothesis: 'Possible cosmic ray interaction with detector wall, creating cascade of secondary particles',
+    status: 'open'
+  },
+  {
+    id: 'A002',
+    eventId: 'EVT-2024-1087',
+    severity: 'Moderate',
+    score: 0.74,
+    energy: 2.1,
+    s2s1Ratio: 0.3,
+    detectionTime: '2024-10-10T13:45:22Z',
+    features: ['Sub-threshold energy', 'Abnormal pulse shape', 'Late light signal'],
+    hypothesis: 'Potential detector artifact or electronic noise mimicking low-energy event',
+    status: 'open'
+  },
+  {
+    id: 'A003',
+    eventId: 'EVT-2024-1156',
+    severity: 'Minor',
+    score: 0.58,
+    energy: 18.7,
+    s2s1Ratio: 15.2,
+    detectionTime: '2024-10-10T12:18:33Z',
+    features: ['Delayed coincidence', 'Asymmetric light pattern'],
+    hypothesis: 'Possible neutron capture event with delayed gamma emission',
+    status: 'open'
+  },
+  {
+    id: 'A004',
+    eventId: 'EVT-2024-0998',
+    severity: 'Critical',
+    score: 0.89,
+    energy: 78.9,
+    s2s1Ratio: 245.7,
+    detectionTime: '2024-10-10T11:32:41Z',
+    features: ['High energy deposit', 'Multiple PMT hits', 'Saturation warning'],
+    hypothesis: 'Likely muon track passing through active volume, causing localized energy deposits',
+    status: 'investigating'
+  },
+  {
+    id: 'A005',
+    eventId: 'EVT-2024-1203',
+    severity: 'Moderate',
+    score: 0.67,
+    energy: 12.4,
+    s2s1Ratio: 3.1,
+    detectionTime: '2024-10-10T10:15:17Z',
+    features: ['Position reconstruction failure', 'Low light yield'],
+    hypothesis: 'Event near detector boundary with partial charge collection efficiency',
+    status: 'open'
+  }
+];
+
 const classificationColors = {
   'Background': '#10b981', // green
   'WIMP': '#3b82f6', // blue
   'Axion': '#8b5cf6', // purple
   'Neutrino': '#f59e0b', // orange
+};
+
+const severityConfig = {
+  'Critical': { color: 'bg-red-500', border: 'border-l-red-500', emoji: '🔴', textColor: 'text-red-400' },
+  'Moderate': { color: 'bg-yellow-500', border: 'border-l-yellow-500', emoji: '🟡', textColor: 'text-yellow-400' },
+  'Minor': { color: 'bg-green-500', border: 'border-l-green-500', emoji: '🟢', textColor: 'text-green-400' }
 };
 
 const ResultsDashboard = () => {
@@ -48,6 +120,12 @@ const ResultsDashboard = () => {
     'Axion': true,
     'Neutrino': true,
   });
+
+  const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('score');
+  const [anomalyStatuses, setAnomalyStatuses] = useState<{[key: string]: string}>(
+    mockAnomalies.reduce((acc, anomaly) => ({ ...acc, [anomaly.id]: anomaly.status }), {})
+  );
 
   // Calculate overview statistics
   const totalEvents = mockEventData.length;
@@ -63,6 +141,24 @@ const ResultsDashboard = () => {
   );
 
   const anomalies = mockEventData.filter(event => event.confidence < 70).length;
+
+  // Filter and sort anomalies
+  const filteredAnomalies = mockAnomalies
+    .filter(anomaly => severityFilter === 'all' || anomaly.severity === severityFilter)
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'score':
+          return b.score - a.score;
+        case 'eventId':
+          return a.eventId.localeCompare(b.eventId);
+        case 'time':
+          return new Date(b.detectionTime).getTime() - new Date(a.detectionTime).getTime();
+        default:
+          return 0;
+      }
+    });
+
+  const openAnomalies = mockAnomalies.filter(a => anomalyStatuses[a.id] === 'open').length;
 
   // Confidence distribution data
   const confidenceDistribution = [
@@ -93,6 +189,13 @@ const ResultsDashboard = () => {
   const exportChart = (chartName: string) => {
     // Mock export functionality
     console.log(`Exporting ${chartName} chart...`);
+  };
+
+  const handleAnomalyAction = (anomalyId: string, action: 'investigate' | 'mark-known') => {
+    setAnomalyStatuses(prev => ({
+      ...prev,
+      [anomalyId]: action === 'investigate' ? 'investigating' : 'known'
+    }));
   };
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -365,6 +468,188 @@ const ResultsDashboard = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Anomaly Hub Section */}
+      <div className="mt-8">
+        <Card className="backdrop-blur-md bg-card/50 border-white/10">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                  Anomaly Hub
+                </CardTitle>
+                <CardDescription>Detected anomalies requiring investigation</CardDescription>
+              </div>
+              <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/50">
+                {openAnomalies} anomalies detected in last batch
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Filters */}
+            <div className="flex gap-4 mb-6">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Filter by severity:</span>
+                <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                    <SelectItem value="Moderate">Moderate</SelectItem>
+                    <SelectItem value="Minor">Minor</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Sort by:</span>
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="score">Anomaly Score</SelectItem>
+                    <SelectItem value="eventId">Event ID</SelectItem>
+                    <SelectItem value="time">Detection Time</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Anomaly Accordion */}
+            <Accordion type="single" collapsible className="space-y-3">
+              {filteredAnomalies.map((anomaly) => {
+                const config = severityConfig[anomaly.severity as keyof typeof severityConfig];
+                const status = anomalyStatuses[anomaly.id];
+                
+                return (
+                  <AccordionItem key={anomaly.id} value={anomaly.id} className="border-none">
+                    <Card className={`backdrop-blur-md bg-card/50 border-white/10 ${config.border} border-l-4`}>
+                      <AccordionTrigger className="hover:no-underline p-0">
+                        <CardHeader className="w-full">
+                          <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-3">
+                              <span className="text-lg">{config.emoji}</span>
+                              <div className="text-left">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold">{anomaly.eventId}</span>
+                                  <Badge variant="outline" className={`${config.textColor} border-current`}>
+                                    {anomaly.severity}
+                                  </Badge>
+                                  {status !== 'open' && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      {status === 'investigating' ? 'Investigating' : 'Known'}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  Anomaly Score: {anomaly.score.toFixed(2)} | 
+                                  Energy: {anomaly.energy} keV | 
+                                  S2/S1: {anomaly.s2s1Ratio}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-primary">{anomaly.score.toFixed(2)}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {new Date(anomaly.detectionTime).toLocaleTimeString()}
+                              </div>
+                            </div>
+                          </div>
+                        </CardHeader>
+                      </AccordionTrigger>
+                      
+                      <AccordionContent>
+                        <CardContent className="pt-0">
+                          <div className="space-y-4">
+                            {/* Quick Stats */}
+                            <div className="grid grid-cols-3 gap-4 p-3 bg-muted/10 rounded-lg">
+                              <div>
+                                <div className="text-xs text-muted-foreground">Energy</div>
+                                <div className="font-semibold">{anomaly.energy} keV</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">S2/S1 Ratio</div>
+                                <div className="font-semibold">{anomaly.s2s1Ratio}</div>
+                              </div>
+                              <div>
+                                <div className="text-xs text-muted-foreground">Detection Time</div>
+                                <div className="font-semibold text-xs">
+                                  {new Date(anomaly.detectionTime).toLocaleString()}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Unusual Features */}
+                            <div>
+                              <div className="text-sm font-semibold mb-2">Unusual Features:</div>
+                              <div className="flex flex-wrap gap-2">
+                                {anomaly.features.map((feature, idx) => (
+                                  <Badge key={idx} variant="outline" className="text-xs">
+                                    {feature}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Claude's Hypothesis */}
+                            <div>
+                              <div className="text-sm font-semibold mb-2">Claude's Hypothesis:</div>
+                              <div className="text-sm text-muted-foreground italic bg-muted/10 p-3 rounded-lg">
+                                "{anomaly.hypothesis}"
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex gap-2 pt-2">
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleAnomalyAction(anomaly.id, 'investigate')}
+                                disabled={status !== 'open'}
+                                className="flex items-center gap-2"
+                              >
+                                <Search className="w-3 h-3" />
+                                {status === 'investigating' ? 'Investigating...' : 'Investigate'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleAnomalyAction(anomaly.id, 'mark-known')}
+                                disabled={status !== 'open'}
+                                className="flex items-center gap-2"
+                              >
+                                <Check className="w-3 h-3" />
+                                {status === 'known' ? 'Marked as Known' : 'Mark as Known'}
+                              </Button>
+                              {status !== 'open' && (
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground ml-auto">
+                                  <Clock className="w-3 h-3" />
+                                  Status updated
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </AccordionContent>
+                    </Card>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+
+            {filteredAnomalies.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>No anomalies found matching current filters.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </PageLayout>
   );
 };
