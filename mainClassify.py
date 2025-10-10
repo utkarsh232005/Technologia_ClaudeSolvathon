@@ -132,12 +132,9 @@
 # # Use the Python 'requests' library for the HTTP API call
 # import requests
 
-# # --- API Configuration (PLACEHOLDERS - Replace these values) ---
-# # NOTE: Use an environment variable or secret management for the real API key.
-# # For testing purposes, we define a placeholder and API URL structure here.
-# API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDrp9uzRara99-VFDqXhKJ59qX4gEVy71c") # Placeholder for the key
-# API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={}"
-# MODEL_NAME = "gemini-2.5-flash" # Cost-effective model for detailed reasoning
+# # --- API Configuration (REMOVED - Now using environment variables) ---
+# NOTE: All API configuration has been moved to use environment variables for security.
+# See .env.example and ENV_SETUP.md for setup instructions.
 
 # CSV = 'dark_matter_synthetic_dataset.csv'
 

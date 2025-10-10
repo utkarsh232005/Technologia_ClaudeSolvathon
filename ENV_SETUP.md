@@ -9,8 +9,9 @@ The Gemini API key has been successfully moved to a secure environment variable 
 ### 1. `.env` (PRIVATE - Not committed to Git)
 Contains your actual API keys:
 ```env
-GEMINI_API_KEY=AIzaSyDrp9uzRara99-VFDqXhKJ59qX4gEVy71c
+GEMINI_API_KEY=your_actual_gemini_api_key_here
 ```
+**⚠️ Never commit this file! Keep your API key secret.**
 
 ### 2. `.env.example` (Template - Safe to commit)
 Template file for other developers:
