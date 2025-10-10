@@ -12,8 +12,8 @@ build/
 develop-eggs/
 dist/
 downloa# Data Science specific
-# Large datasets
-*.csv
+# Large datasets (but allow dataset folder to be tracked)
+# Note: Dataset folder files are now tracked for project sharing
 *.h5
 *.hdf5
 *.pkl
@@ -21,11 +21,8 @@ downloa# Data Science specific
 *.parquet
 *.feather
 
-# Dataset folder contents (but keep folder structure)
-dataset/*.csv
-dataset/*.json
-dataset/*.h5
-dataset/*.pkl
+# Allow dataset folder files to be tracked
+# dataset/ folder contents will be included in git
 .eggs/
 lib/
 lib64/
