@@ -434,7 +434,7 @@ const EventClassifier = () => {
             {/* Left Side - Event Input Form */}
             <Card className="backdrop-blur-md bg-card/50 border-white/10">
               <CardHeader>
-                <CardTitle>Event Input</CardTitle>
+                <CardTitle className="section-heading">Event Input</CardTitle>
                 <CardDescription>Enter event parameters for classification</CardDescription>
               </CardHeader>
           <CardContent className="space-y-4">
@@ -552,22 +552,23 @@ const EventClassifier = () => {
             </div>
 
             {/* S2/S1 Ratio Display */}
-            <div className="p-3 bg-muted/20 rounded-lg">
-              <div className="text-sm text-muted-foreground">S2/S1 Ratio</div>
-              <div className="text-2xl font-bold text-primary">{calculateS2S1Ratio()}</div>
+            <div className="stat-card text-center">
+              <div className="text-sm text-muted-foreground font-medium">S2/S1 Ratio</div>
+              <div className="stat-number text-2xl">{calculateS2S1Ratio()}</div>
             </div>
 
             {/* Action buttons */}
             <div className="space-y-2">
               <Button 
-                className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                variant="premium"
+                className="w-full group"
                 onClick={classifyEvent}
               >
-                <Brain className="w-4 h-4 mr-2" />
+                <Brain className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
                 Classify Event
               </Button>
-              <Button variant="outline" className="w-full">
-                <Upload className="w-4 h-4 mr-2" />
+              <Button variant="outline" className="w-full group">
+                <Upload className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
                 Upload CSV for Batch
               </Button>
             </div>
@@ -577,7 +578,7 @@ const EventClassifier = () => {
         {/* Right Side - Classification Result */}
         <Card className="backdrop-blur-md bg-card/50 border-white/10">
           <CardHeader>
-            <CardTitle>Classification Result</CardTitle>
+            <CardTitle className="section-heading">Classification Result</CardTitle>
             <CardDescription>AI analysis and confidence assessment</CardDescription>
           </CardHeader>
           <CardContent>
@@ -1067,28 +1068,40 @@ const EventClassifier = () => {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                  <div className="p-3 bg-muted/20 rounded-lg">
-                    <div className="text-2xl font-bold">{batchState.currentIndex}</div>
-                    <div className="text-xs text-muted-foreground">Processed</div>
+                  <div 
+                    className="stat-card"
+                    style={{ animationDelay: '0.1s' }}
+                  >
+                    <div className="stat-number text-2xl">{batchState.currentIndex}</div>
+                    <div className="text-xs text-muted-foreground font-medium">Processed</div>
                   </div>
-                  <div className="p-3 bg-muted/20 rounded-lg">
-                    <div className="text-2xl font-bold">{batchState.totalEvents - batchState.currentIndex}</div>
-                    <div className="text-xs text-muted-foreground">Remaining</div>
+                  <div 
+                    className="stat-card"
+                    style={{ animationDelay: '0.25s' }}
+                  >
+                    <div className="stat-number text-2xl">{batchState.totalEvents - batchState.currentIndex}</div>
+                    <div className="text-xs text-muted-foreground font-medium">Remaining</div>
                   </div>
-                  <div className="p-3 bg-muted/20 rounded-lg">
-                    <div className="text-2xl font-bold">
+                  <div 
+                    className="stat-card"
+                    style={{ animationDelay: '0.4s' }}
+                  >
+                    <div className="stat-number text-2xl">
                       {batchState.currentIndex > 0 ? 
                         Math.round((Date.now() - batchState.startTime) / batchState.currentIndex) : 0}ms
                     </div>
-                    <div className="text-xs text-muted-foreground">Avg Time</div>
+                    <div className="text-xs text-muted-foreground font-medium">Avg Time</div>
                   </div>
-                  <div className="p-3 bg-muted/20 rounded-lg">
-                    <div className="text-2xl font-bold">
+                  <div 
+                    className="stat-card"
+                    style={{ animationDelay: '0.55s' }}
+                  >
+                    <div className="stat-number text-2xl">
                       {batchState.currentIndex > 0 ? 
                         Math.round(((batchState.totalEvents - batchState.currentIndex) * 
                           (Date.now() - batchState.startTime)) / batchState.currentIndex / 1000) : 0}s
                     </div>
-                    <div className="text-xs text-muted-foreground">Est. Remaining</div>
+                    <div className="text-xs text-muted-foreground font-medium">Est. Remaining</div>
                   </div>
                 </div>
 
@@ -1128,11 +1141,14 @@ const EventClassifier = () => {
                         acc[result.event.type] = (acc[result.event.type] || 0) + 1;
                         return acc;
                       }, {} as Record<string, number>)
-                    ).map(([type, count]) => (
-                      <div key={type} className="text-center p-4 bg-muted/20 rounded-lg">
+                    ).map(([type, count], index) => (
+                      <div 
+                        key={type} 
+                        className="stat-card text-center"
+                        style={{ animationDelay: `${0.1 + index * 0.1}s` }}
+                      >
                         <Badge 
-                          variant="outline" 
-                          className={`mb-2 ${
+                          className={`mb-2 badge-outline-premium ${
                             type === 'WIMP' ? 'border-blue-500/50 text-blue-400' :
                             type === 'Background' ? 'border-green-500/50 text-green-400' :
                             type === 'Axion' ? 'border-purple-500/50 text-purple-400' :
@@ -1142,8 +1158,8 @@ const EventClassifier = () => {
                         >
                           {type}
                         </Badge>
-                        <div className="text-2xl font-bold">{count}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="stat-number text-2xl">{count}</div>
+                        <div className="text-xs text-muted-foreground font-medium">
                           {((count / batchState.processedResults.length) * 100).toFixed(1)}%
                         </div>
                       </div>
@@ -1155,30 +1171,39 @@ const EventClassifier = () => {
                 <div>
                   <h4 className="font-medium mb-3">Processing Statistics</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-muted/20 rounded-lg">
+                    <div 
+                      className="stat-card"
+                      style={{ animationDelay: '0.1s' }}
+                    >
                       <div className="flex items-center gap-2 mb-2">
                         <Clock className="w-4 h-4" />
                         <span className="text-sm font-medium">Average Processing Time</span>
                       </div>
-                      <div className="text-xl font-bold">
+                      <div className="stat-number text-xl">
                         {(batchState.processedResults.reduce((acc, result) => 
                           acc + result.classification.processingTime, 0) / 
                           batchState.processedResults.length).toFixed(1)}ms
                       </div>
                     </div>
-                    <div className="p-4 bg-muted/20 rounded-lg">
+                    <div 
+                      className="stat-card"
+                      style={{ animationDelay: '0.25s' }}
+                    >
                       <div className="flex items-center gap-2 mb-2">
                         <CheckCircle className="w-4 h-4" />
                         <span className="text-sm font-medium">Total Events</span>
                       </div>
-                      <div className="text-xl font-bold">{batchState.processedResults.length}</div>
+                      <div className="stat-number text-xl">{batchState.processedResults.length}</div>
                     </div>
-                    <div className="p-4 bg-muted/20 rounded-lg">
+                    <div 
+                      className="stat-card"
+                      style={{ animationDelay: '0.4s' }}
+                    >
                       <div className="flex items-center gap-2 mb-2">
                         <Brain className="w-4 h-4" />
                         <span className="text-sm font-medium">Average Confidence</span>
                       </div>
-                      <div className="text-xl font-bold">
+                      <div className="stat-number text-xl">
                         {(batchState.processedResults.reduce((acc, result) => 
                           acc + result.event.confidence, 0) / 
                           batchState.processedResults.length).toFixed(1)}%
@@ -1189,12 +1214,16 @@ const EventClassifier = () => {
 
                 {/* Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button onClick={downloadResults} className="flex-1">
-                    <Download className="w-4 h-4 mr-2" />
+                  <Button 
+                    onClick={downloadResults} 
+                    variant="premium"
+                    className="flex-1 group"
+                  >
+                    <Download className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
                     Download Classified Dataset
                   </Button>
-                  <Button variant="outline" className="flex-1">
-                    <ExternalLink className="w-4 h-4 mr-2" />
+                  <Button variant="outline" className="flex-1 group">
+                    <ExternalLink className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
                     View in Results Dashboard
                   </Button>
                   <Button variant="outline" onClick={resetBatchProcessing}>

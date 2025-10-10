@@ -308,17 +308,17 @@ const ResultsDashboard = () => {
     >
       {/* Top Section - Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="backdrop-blur-md bg-card/50 border-white/10">
+        <Card className="stat-card">
           <CardHeader className="pb-2">
             <CardDescription>Total Events Processed</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground mb-1">{totalEvents.toLocaleString()}</div>
+            <div className="stat-number text-3xl mb-1">{totalEvents.toLocaleString()}</div>
             <div className="text-sm text-primary">+12% from last week</div>
           </CardContent>
         </Card>
 
-        <Card className="backdrop-blur-md bg-card/50 border-white/10">
+        <Card className="stat-card">
           <CardHeader className="pb-2">
             <CardDescription>Classification Breakdown</CardDescription>
           </CardHeader>
@@ -358,17 +358,17 @@ const ResultsDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card className="backdrop-blur-md bg-card/50 border-white/10">
+        <Card className="stat-card">
           <CardHeader className="pb-2">
             <CardDescription>Average Confidence Score</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-foreground mb-1">{averageConfidence}%</div>
+            <div className="stat-number text-3xl mb-1">{averageConfidence}%</div>
             <div className="text-sm text-primary">+2.1% from last week</div>
           </CardContent>
         </Card>
 
-        <Card className={`backdrop-blur-md bg-card/50 border-white/10 ${anomalies > 0 ? 'border-red-500/50 bg-red-500/5' : ''}`}>
+        <Card className={`stat-card ${anomalies > 0 ? 'border-red-500/50 bg-red-500/5' : ''}`}>
           <CardHeader className="pb-2">
             <CardDescription className="flex items-center gap-2">
               Anomalies Detected
@@ -376,7 +376,7 @@ const ResultsDashboard = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className={`text-3xl font-bold mb-1 ${anomalies > 0 ? 'text-red-400' : 'text-foreground'}`}>
+            <div className={`text-3xl mb-1 font-bold ${anomalies > 0 ? 'text-red-400' : ''} ${anomalies === 0 ? 'stat-number' : ''}`}>
               {anomalies}
             </div>
             <div className="text-sm text-muted-foreground">Low confidence events</div>
@@ -390,7 +390,7 @@ const ResultsDashboard = () => {
         <Card className="backdrop-blur-md bg-card/50 border-white/10">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Classification Distribution</CardTitle>
+              <CardTitle className="section-heading">Classification Distribution</CardTitle>
               <CardDescription>Breakdown by particle type</CardDescription>
             </div>
             <Button 
@@ -438,7 +438,7 @@ const ResultsDashboard = () => {
         <Card className="backdrop-blur-md bg-card/50 border-white/10">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle>Confidence Score Distribution</CardTitle>
+              <CardTitle className="section-heading">Confidence Score Distribution</CardTitle>
               <CardDescription>Events by confidence level</CardDescription>
             </div>
             <Button 
@@ -568,7 +568,8 @@ const ResultsDashboard = () => {
                 </CardTitle>
                 <CardDescription>Detected anomalies requiring investigation</CardDescription>
               </div>
-              <Badge variant="destructive" className="bg-red-500/20 text-red-400 border-red-500/50">
+              <Badge className="badge-danger">
+                <AlertTriangle className="w-3 h-3" />
                 {openAnomalies} anomalies detected in last batch
               </Badge>
             </div>
@@ -623,11 +624,11 @@ const ResultsDashboard = () => {
                               <div className="text-left">
                                 <div className="flex items-center gap-2">
                                   <span className="font-semibold">{anomaly.eventId}</span>
-                                  <Badge variant="outline" className={`${config.textColor} border-current`}>
+                                  <Badge className={`badge-outline-premium ${config.textColor} border-current`}>
                                     {anomaly.severity}
                                   </Badge>
                                   {status !== 'open' && (
-                                    <Badge variant="secondary" className="text-xs">
+                                    <Badge className="badge-premium text-xs">
                                       {status === 'investigating' ? 'Investigating' : 'Known'}
                                     </Badge>
                                   )}
@@ -675,7 +676,7 @@ const ResultsDashboard = () => {
                               <div className="text-sm font-semibold mb-2">Unusual Features:</div>
                               <div className="flex flex-wrap gap-2">
                                 {anomaly.features.map((feature, idx) => (
-                                  <Badge key={idx} variant="outline" className="text-xs">
+                                  <Badge key={idx} className="badge-outline-premium text-xs">
                                     {feature}
                                   </Badge>
                                 ))}
@@ -1070,23 +1071,32 @@ const ResultsDashboard = () => {
 
               {/* Timeline Statistics */}
               <div className="grid grid-cols-3 gap-4 text-center">
-                <div className="bg-slate-800/50 rounded-lg p-3">
-                  <div className="text-lg font-bold text-blue-400">
+                <div 
+                  className="stat-card"
+                  style={{ animationDelay: '0.1s' }}
+                >
+                  <div className="stat-number text-lg">
                     {mockEventData.filter(d => d.type === 'WIMP').length}
                   </div>
-                  <div className="text-xs text-slate-400">WIMP Events</div>
+                  <div className="text-xs text-muted-foreground font-medium">WIMP Events</div>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg p-3">
-                  <div className="text-lg font-bold text-yellow-400">
+                <div 
+                  className="stat-card"
+                  style={{ animationDelay: '0.25s' }}
+                >
+                  <div className="stat-number text-lg">
                     {mockEventData.filter(d => d.confidence < 70).length}
                   </div>
-                  <div className="text-xs text-slate-400">Low Confidence</div>
+                  <div className="text-xs text-muted-foreground font-medium">Low Confidence</div>
                 </div>
-                <div className="bg-slate-800/50 rounded-lg p-3">
-                  <div className="text-lg font-bold text-green-400">
+                <div 
+                  className="stat-card"
+                  style={{ animationDelay: '0.4s' }}
+                >
+                  <div className="stat-number text-lg">
                     {(mockEventData.reduce((acc, d) => acc + d.confidence, 0) / mockEventData.length).toFixed(1)}%
                   </div>
-                  <div className="text-xs text-slate-400">Avg Confidence</div>
+                  <div className="text-xs text-muted-foreground font-medium">Avg Confidence</div>
                 </div>
               </div>
             </div>

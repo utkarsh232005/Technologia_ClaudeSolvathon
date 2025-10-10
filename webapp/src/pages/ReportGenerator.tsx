@@ -423,7 +423,8 @@ ${selectedSections.includes('Proposed Follow-ups') ? 'The proposed follow-up pro
             <Button
               onClick={generateReport}
               disabled={isGenerating}
-              className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+              variant="premium"
+              className="w-full group"
             >
               {isGenerating ? (
                 <>
@@ -432,7 +433,7 @@ ${selectedSections.includes('Proposed Follow-ups') ? 'The proposed follow-up pro
                 </>
               ) : (
                 <>
-                  <FileText className="w-4 h-4 mr-2" />
+                  <FileText className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
                   Generate Report
                 </>
               )}

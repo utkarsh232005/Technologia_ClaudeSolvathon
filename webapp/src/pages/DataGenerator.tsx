@@ -133,7 +133,7 @@ const DataGenerator = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <Card className="backdrop-blur-md bg-card/50 border-white/10">
           <CardHeader>
-            <CardTitle>Event Configuration</CardTitle>
+            <CardTitle className="section-heading">Event Configuration</CardTitle>
             <CardDescription>Configure the parameters for synthetic event generation</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -188,7 +188,8 @@ const DataGenerator = () => {
               <Button 
                 onClick={generateSyntheticData}
                 disabled={isGenerating}
-                className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+                variant="premium"
+                className="w-full group"
               >
                 {isGenerating ? (
                   <>
@@ -197,7 +198,7 @@ const DataGenerator = () => {
                   </>
                 ) : (
                   <>
-                    <Zap className="w-4 h-4 mr-2" />
+                    <Zap className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
                     Generate Events
                   </>
                 )}
@@ -219,7 +220,7 @@ const DataGenerator = () => {
 
         <Card className="backdrop-blur-md bg-card/50 border-white/10">
           <CardHeader>
-            <CardTitle>Generation Statistics</CardTitle>
+            <CardTitle className="section-heading">Generation Statistics</CardTitle>
             <CardDescription>Overview of generated event data</CardDescription>
           </CardHeader>
           <CardContent>
@@ -255,9 +256,9 @@ const DataGenerator = () => {
                 <Button
                   onClick={() => handleExport(generatedData)}
                   variant="outline"
-                  className="w-full"
+                  className="w-full group"
                 >
-                  <Download className="w-4 h-4 mr-2" />
+                  <Download className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
                   Export All Data
                 </Button>
               </div>
