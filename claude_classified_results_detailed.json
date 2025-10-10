@@ -1,37 +1,5 @@
 [
   {
-    "event_id": 14638,
-    "recoil_energy_keV": 3.616821,
-    "s1_light_yield": 10.166946,
-    "s2_charge_yield": 3820.602487,
-    "interaction_type": "sterile_neutrino_decay",
-    "particle_source": "sterile_neutrino",
-    "label": "Sterile-Neutrino",
-    "position_x_mm": 254.84744,
-    "position_y_mm": 95.475055,
-    "position_z_mm": -341.476405,
-    "drift_time_us": 119.190673,
-    "s1_width_ns": 58.847339,
-    "s2_width_us": 2.12874,
-    "s1_area_PE": 8.986836,
-    "s2_area_PE": 3249.198934,
-    "s2_over_s1_ratio": 361.550937,
-    "log10_s2_over_s1": 2.558169,
-    "timestamp": "2024-11-13 13:02:09.837762",
-    "detector_temp_K": 175.332398,
-    "gas_pressure_bar": 1.991008,
-    "electric_field_V_cm": 193.044223,
-    "event_quality": 0.891053,
-    "pile_up_flag": 0,
-    "wimp_mass_GeV": NaN,
-    "api_analysis": {
-      "classification": "Background (ER)",
-      "confidence": 1.0,
-      "reasoning": "The event exhibits an exceptionally high S2/S1 ratio of 361.55, which is significantly greater than the threshold of 5.0 for electronic recoils. In a liquid xenon TPC, electronic recoils (ERs) typically produce a much larger ionization signal (S2) relative to their primary scintillation signal (S1) compared to nuclear recoils (NRs). This is due to the different energy deposition mechanisms and recombination probabilities for electrons and nuclei in the xenon medium. The observed ratio is a definitive signature of an ER event, consistent with common background sources such as gamma rays or beta decays. The recoil energy of 3.616821 keV is within a typical range for such events, and the position within the detector volume does not contradict this classification.",
-      "follow_up_action": "Investigate potential sources of high-energy electronic recoil backgrounds within the detector volume."
-    }
-  },
-  {
     "event_id": 39087,
     "recoil_energy_keV": 2.710526,
     "s1_light_yield": 6.238364,
@@ -61,38 +29,6 @@
       "confidence": 0.99,
       "reasoning": "The event exhibits an exceptionally high S2/S1 ratio of 676.039109. This value is significantly greater than the threshold of 5, which unequivocally places it within the 'High S2/S1' band. Such a pronounced S2/S1 ratio is a definitive signature of an electronic recoil (ER) event, where the ionization yield (S2) is much higher relative to the prompt scintillation (S1) compared to nuclear recoils. This is characteristic of interactions from gamma rays or beta particles, which constitute the primary electronic recoil background in liquid xenon TPCs. The recoil energy of 2.710526 keV is consistent with a low-energy electronic recoil, and the event's position within the detector's active volume does not suggest any edge effects or anomalous localization.",
       "follow_up_action": "Review and optimize shielding against external gamma and beta backgrounds."
-    }
-  },
-  {
-    "event_id": 32676,
-    "recoil_energy_keV": 5.676477,
-    "s1_light_yield": 14.77126,
-    "s2_charge_yield": 8691.437498,
-    "interaction_type": "electronic_recoil",
-    "particle_source": "gamma_ray",
-    "label": "Background",
-    "position_x_mm": 140.488701,
-    "position_y_mm": -473.110458,
-    "position_z_mm": 383.290469,
-    "drift_time_us": 664.128172,
-    "s1_width_ns": 57.530652,
-    "s2_width_us": 3.094881,
-    "s1_area_PE": 10.90218,
-    "s2_area_PE": 8276.9948,
-    "s2_over_s1_ratio": 759.205495,
-    "log10_s2_over_s1": 2.880359,
-    "timestamp": "2024-12-22 04:49:42.191611",
-    "detector_temp_K": 174.942741,
-    "gas_pressure_bar": 1.856418,
-    "electric_field_V_cm": 186.855122,
-    "event_quality": 0.777219,
-    "pile_up_flag": 0,
-    "wimp_mass_GeV": NaN,
-    "api_analysis": {
-      "classification": "Background (ER)",
-      "confidence": 0.99,
-      "reasoning": "The event exhibits an exceptionally high S2/S1 ratio of 759.21. This value falls significantly above the threshold of 5, which is characteristic of electronic recoil (ER) events. ER interactions, typically caused by gamma rays or beta particles, produce a higher ionization yield relative to scintillation light (S1) compared to nuclear recoils (NR) of similar energy. This leads to a much larger S2 signal for a given S1, placing this event firmly in the ER background region. The recoil energy of 5.68 keV is consistent with various background sources, and the event's position within the detector's active volume does not contradict an ER classification. The extremely high S2/S1 ratio strongly indicates an electronic interaction rather than a WIMP-like nuclear recoil or an axion-like exotic electron recoil.",
-      "follow_up_action": "Investigate potential sources of high S2/S1 electronic recoil backgrounds in this energy and position region."
     }
   }
 ]
