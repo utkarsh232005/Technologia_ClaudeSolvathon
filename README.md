@@ -1,18 +1,24 @@
 # Dark Matter Event Classification Project
 
-This project generates synthetic dark matter detector data and classifies candidate events using a local deterministic heuristic.
+This project generates synthetic dark matter detector data and classifies candidate events using Google's Gemini AI API for advanced scientific reasoning.
 
 ## Files
 
 ### Core Scripts
 - **`main.py`** - Generates synthetic dataset (50,000 events) from a liquid xenon detector simulation
-- **`mainClassify.py`** - Classifies candidate events using local heuristics (no API required)
+- **`mainClassify.py`** - Classifies candidate events using Google Gemini API
+
+### Configuration
+- **`.env`** - Environment variables (API key) - **DO NOT COMMIT**
+- **`.env.example`** - Template for environment setup
+- **`requirements.txt`** - Python dependencies
+- **`ENV_SETUP.md`** - Detailed security and setup guide
 
 ### Generated Outputs
 - **`dark_matter_synthetic_dataset.csv`** - Main dataset with all events
 - **`dark_matter_synthetic_dataset.json`** - JSON version of dataset
 - **`dataset_metadata.json`** - Metadata about the generated dataset
-- **`classified_events_with_reasoning.json`** - Classification results with reasoning
+- **`claude_classified_results_detailed.json`** - AI classification results with detailed reasoning
 - **`background_events.csv`** - Background events only
 - **`candidate_events.csv`** - Candidate events (non-background)
 
@@ -27,39 +33,55 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 
 # Install dependencies
-pip install pandas numpy
+pip install -r requirements.txt
 ```
 
-### 2. Generate Dataset
+### 2. Configure API Key (for mainClassify.py)
+```powershell
+# Copy the environment template
+Copy-Item .env.example .env
+
+# Edit .env and add your Gemini API key
+# Get your key from: https://makersuite.google.com/app/apikey
+notepad .env
+```
+
+### 3. Generate Dataset
 ```powershell
 python main.py
 ```
-This creates the synthetic dataset files.
+This creates the synthetic dataset files (50,000 events).
 
-### 3. Classify Events
+### 4. Run Classification (using Gemini API)
 ```powershell
-# Classify 10 labeled candidate events
-python mainClassify.py --num-events 10 --use-labels
+# Classify a small sample first
+python mainClassify.py --num-events 3
 
-# Classify 5 events using S2/S1 threshold (default: 500)
-python mainClassify.py --num-events 5 --s2s1-threshold 500
+# Classify more events
+python mainClassify.py --num-events 50
 
-# See all options
-python mainClassify.py --help
+# Results saved to: claude_classified_results_detailed.json
 ```
+
+**⚠️ Important:** Make sure you've configured the API key in step 2. See [ENV_SETUP.md](ENV_SETUP.md) for detailed security information.
 
 ## Classification Logic
 
-The local classifier uses deterministic heuristics:
+The Gemini AI classifier uses advanced scientific reasoning based on:
 
-- **WIMP-like**: S2/S1 < 500 AND energy 1-60 keV (nuclear recoil signature)
-- **Axion-like**: Energy near 14.4 keV (within 0.5 keV)
-- **Background**: High S2/S1 ratio or outside energy range (electronic recoil)
+- **S2/S1 Ratio Bands**:
+  - High S2/S1 (>5): Background (Electronic Recoil - ER)
+  - Medium S2/S1 (2.0-4.0): WIMP-like (Nuclear Recoil - NR)
+  - Low S2/S1 (<2.0): Axion-like (Exotic Electron Recoil)
+
+- **Recoil Energy**: Identifies specific dark matter signatures
+- **Position Data**: Spatial analysis capabilities
 
 ### Key Features
-- **S2/S1 ratio**: Primary discriminator between nuclear recoils (NR) and electronic recoils (ER)
-- **Recoil energy**: Helps identify specific dark matter candidates
-- **Position data**: Available for spatial analysis
+- **AI-powered reasoning**: Detailed scientific explanations for each classification
+- **Structured JSON output**: Consistent schema for programmatic analysis
+- **Rate limiting**: Built-in retry logic with exponential backoff
+- **Confidence scores**: Probabilistic assessment of each classification
 
 ## Dataset Statistics
 
@@ -73,36 +95,45 @@ The local classifier uses deterministic heuristics:
 
 ```
 --num-events N        Number of events to classify (default: 5)
---s2s1-threshold T    S2/S1 upper cutoff for candidates (default: 500.0)
---use-labels          Select candidates using dataset labels (label != 'Background')
 ```
 
 ## Output Format
 
-`classified_events_with_reasoning.json` contains:
+`claude_classified_results_detailed.json` contains:
 ```json
 [
   {
-    "event_id": 12345,
-    "recoil_energy_keV": 15.2,
-    "s2_area_PE": 850.3,
-    "s1_area_PE": 42.1,
+    "event_id": 14638,
+    "recoil_energy_keV": 56.74,
+    "s2_area_PE": 3615.47,
+    "s1_area_PE": 10.0,
+    "s2s1_ratio": 361.55,
     ...
-    "analysis": {
-      "label": "WIMP-like",
-      "confidence": 0.6,
-      "reasoning": "s2/s1=20.2 | Low-ish S2/S1 and energy in WIMP search range",
-      "s2s1": 20.2
+    "classification": {
+      "label": "Background (ER)",
+      "confidence": 1.00,
+      "reasoning": "The S2/S1 ratio of 361.55 is significantly greater than the 5.0 threshold...",
+      "s2s1_band": "High S2/S1 (>5) - Electronic Recoil"
     }
   }
 ]
 ```
 
+## Security Best Practices
+
+- **Never commit .env files** - Your API key should remain secret
+- **.env is already in .gitignore** - Safe by default
+- **Use .env.example for documentation** - Share the template, not the secrets
+- **Rotate keys if exposed** - Get a new API key from Google if your key is accidentally committed
+
+See [ENV_SETUP.md](ENV_SETUP.md) for complete setup instructions.
+
 ## Notes
 
-- This is a **local-only** classifier (no API calls, fully offline)
-- Perfect for testing and development without costs
-- All reasoning is deterministic and reproducible
+- This classifier uses **Google Gemini AI** for advanced scientific reasoning
+- Requires API key (see setup instructions above)
+- Rate limiting built-in to prevent API quota exhaustion
+- All classifications include detailed scientific explanations
 - Based on real dark matter detection physics principles
 
 ## Next Steps

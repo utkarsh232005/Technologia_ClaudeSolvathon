@@ -367,11 +367,17 @@ from typing import Any, Dict, List
 import pandas as pd
 # Use the Python 'requests' library for the HTTP API call
 import requests
+from dotenv import load_dotenv
 
-# --- API Configuration (PLACEHOLDERS - Replace these values) ---
-# NOTE: Use an environment variable or secret management for the real API key.
-# For testing purposes, we define a placeholder and API URL structure here.
-API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyDrp9uzRara99-VFDqXhKJ59qX4gEVy71c") # Placeholder for the key
+# Load environment variables from .env file
+load_dotenv()
+
+# --- API Configuration ---
+# API key is now loaded from .env file for security
+API_KEY = os.getenv("GEMINI_API_KEY")
+if not API_KEY:
+    raise ValueError("GEMINI_API_KEY not found in environment variables. Please set it in .env file.")
+
 API_URL_TEMPLATE = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key={}"
 MODEL_NAME = "gemini-2.5-flash" # Cost-effective model for detailed reasoning
 
