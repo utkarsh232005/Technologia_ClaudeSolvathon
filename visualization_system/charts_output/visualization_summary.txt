@@ -1,0 +1,35 @@
+================================================================================
+DARK MATTER EVENT ANALYSIS - VISUALIZATION SUMMARY
+================================================================================
+
+DATASET STATISTICS:
+  Total Events: 50,000
+  Features: 23
+
+CLASS DISTRIBUTION:
+  Background          : 46,432 (92.86%)
+  WIMP-like           :  2,073 ( 4.15%)
+  Axion-like          :    756 ( 1.51%)
+  Novel-Anomaly       :    491 ( 0.98%)
+  Sterile-Neutrino    :    248 ( 0.50%)
+
+KEY FEATURE STATISTICS:
+  Recoil Energy (keV):
+    Mean:   5.369
+    Median: 3.697
+    Std:    5.234
+
+  S2/S1 Ratio:
+    Mean:   13.228
+    Median: 13.170
+    Std:    5.897
+
+CLASSIFICATION RESULTS:
+  Events Classified: 2
+  Accuracy: 100.00%
+  Mean Confidence: 95.00%
+  Median Confidence: 95.00%
+
+================================================================================
+Charts generated in: charts_output/
+================================================================================

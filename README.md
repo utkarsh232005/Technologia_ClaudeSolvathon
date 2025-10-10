@@ -2,29 +2,45 @@
 
 This project generates synthetic dark matter detector data and classifies candidate events using Google's Gemini AI API for advanced scientific reasoning.
 
-## Files
+## Project Structure
 
-### Core Scripts
-- **`main.py`** - Generates synthetic dataset (50,000 events) from a liquid xenon detector simulation
-- **`mainClassify.py`** - Classifies candidate events using Google Gemini API
+```
+Technologia_ClaudeSolvathon/
+├── main.py                          # Dataset generator (50,000 events)
+├── requirements.txt                 # Python dependencies
+├── README.md                        # This file
+├── .env.example                     # Environment variable template
+├── dataset/                         # Generated datasets
+│   ├── dark_matter_synthetic_dataset.csv
+│   ├── dark_matter_synthetic_dataset.json
+│   └── dataset_metadata.json
+├── classification_system/           # AI Classification & Reasoning
+│   ├── enhanced_classifier.py       # 7-section detailed explanations
+│   ├── mainClassify.py             # Original classifier
+│   ├── results/                    # Classification results
+│   └── explanations/               # Detailed scientific reports
+└── webapp/                          # Web application (React + Vite)
+    ├── src/                         # Source code
+    └── public/                      # Static assets
+```
+
+## Core Components
+
+### Backend (Python)
+- **`main.py`** - Generates synthetic dark matter detector events
+- **`mainClassify.py`** - Classifies events using Google Gemini AI
+
+### Frontend (React + TypeScript)
+- **`webapp/`** - Interactive web interface for data visualization and analysis
 
 ### Configuration
-- **`.env`** - Environment variables (API key) - **DO NOT COMMIT**
-- **`.env.example`** - Template for environment setup
-- **`requirements.txt`** - Python dependencies
-- **`ENV_SETUP.md`** - Detailed security and setup guide
-
-### Generated Outputs
-- **`dark_matter_synthetic_dataset.csv`** - Main dataset with all events
-- **`dark_matter_synthetic_dataset.json`** - JSON version of dataset
-- **`dataset_metadata.json`** - Metadata about the generated dataset
-- **`claude_classified_results_detailed.json`** - AI classification results with detailed reasoning
-- **`background_events.csv`** - Background events only
-- **`candidate_events.csv`** - Candidate events (non-background)
+- **`.env`** - API keys (gitignored - never commit!)
+- **`.env.example`** - Template for team setup
+- **`requirements.txt`** - Python package dependencies
 
 ## Quick Start (Windows PowerShell)
 
-### 1. Setup Environment
+### 1. Setup Python Environment
 ```powershell
 # Create virtual environment
 python -m venv .venv
@@ -36,7 +52,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 2. Configure API Key (for mainClassify.py)
+### 2. Configure API Key
 ```powershell
 # Copy the environment template
 Copy-Item .env.example .env
@@ -48,22 +64,47 @@ notepad .env
 
 ### 3. Generate Dataset
 ```powershell
+# Generate 50,000 synthetic dark matter events
 python main.py
 ```
-This creates the synthetic dataset files (50,000 events).
 
-### 4. Run Classification (using Gemini API)
+### 4. Run Classification with Detailed Explanations
 ```powershell
-# Classify a small sample first
-python mainClassify.py --num-events 3
+# Navigate to classification system
+cd classification_system
 
-# Classify more events
-python mainClassify.py --num-events 50
+# Classify 5 events with 7-section detailed scientific reports
+python enhanced_classifier.py --num-events 5
 
-# Results saved to: claude_classified_results_detailed.json
+# Results saved to:
+# - results/classification_results.json (summary)
+# - explanations/event_*_explanation.md (detailed reports)
 ```
 
-**⚠️ Important:** Make sure you've configured the API key in step 2. See [ENV_SETUP.md](ENV_SETUP.md) for detailed security information.
+**Each event gets:**
+- ✅ AI Classification + Confidence
+- ✅ 7-Section Scientific Report:
+  1. Classification Justification
+  2. Feature Analysis
+  3. Physics Interpretation
+  4. Comparison with XENONnT/LZ
+  5. Confidence Assessment
+  6. Follow-up Recommendations
+  7. Literature References
+
+### 5. Launch Web Application
+```powershell
+# Navigate to webapp directory
+cd webapp
+
+# Install dependencies (first time only)
+npm install
+
+# Start development server
+npm run dev
+```
+
+The webapp will be available at `http://localhost:5173`
 
 ## Classification Logic
 
@@ -91,12 +132,6 @@ The Gemini AI classifier uses advanced scientific reasoning based on:
 - **Energy range**: 0.5 - 100 keV
 - **Detector**: Simulated liquid xenon TPC
 
-## Command Line Options
-
-```
---num-events N        Number of events to classify (default: 5)
-```
-
 ## Output Format
 
 `claude_classified_results_detailed.json` contains:
@@ -108,11 +143,10 @@ The Gemini AI classifier uses advanced scientific reasoning based on:
     "s2_area_PE": 3615.47,
     "s1_area_PE": 10.0,
     "s2s1_ratio": 361.55,
-    ...
     "classification": {
       "label": "Background (ER)",
       "confidence": 1.00,
-      "reasoning": "The S2/S1 ratio of 361.55 is significantly greater than the 5.0 threshold...",
+      "reasoning": "The S2/S1 ratio of 361.55 is significantly greater than...",
       "s2s1_band": "High S2/S1 (>5) - Electronic Recoil"
     }
   }
@@ -121,24 +155,35 @@ The Gemini AI classifier uses advanced scientific reasoning based on:
 
 ## Security Best Practices
 
-- **Never commit .env files** - Your API key should remain secret
-- **.env is already in .gitignore** - Safe by default
-- **Use .env.example for documentation** - Share the template, not the secrets
-- **Rotate keys if exposed** - Get a new API key from Google if your key is accidentally committed
+- ✅ Never commit `.env` files - API keys must remain secret
+- ✅ `.env` is in `.gitignore` - Safe by default
+- ✅ Use `.env.example` for documentation - Share template, not secrets
+- ⚠️ Rotate keys if exposed - Get new API key from Google
 
-See [ENV_SETUP.md](ENV_SETUP.md) for complete setup instructions.
+## Technologies
 
-## Notes
+**Backend:**
+- Python 3.11+
+- pandas, numpy - Data processing
+- python-dotenv - Environment management
+- requests - API calls
+- Google Gemini AI - Event classification
 
-- This classifier uses **Google Gemini AI** for advanced scientific reasoning
-- Requires API key (see setup instructions above)
-- Rate limiting built-in to prevent API quota exhaustion
-- All classifications include detailed scientific explanations
-- Based on real dark matter detection physics principles
+**Frontend:**
+- React 18 - UI framework
+- TypeScript - Type safety
+- Vite - Build tool
+- Tailwind CSS - Styling
+- shadcn/ui - Component library
 
 ## Next Steps
 
-- Add unit tests for classification logic
-- Implement advanced statistical analysis
-- Compare with ML-based classifiers
-- Add visualization tools for event distributions
+- [ ] Add unit tests for classification logic
+- [ ] Implement result visualization in webapp
+- [ ] Add statistical analysis tools
+- [ ] Create comparison with ML classifiers
+- [ ] Deploy webapp to production
+
+## License
+
+This project is for educational and research purposes.
