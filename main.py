@@ -260,11 +260,15 @@ print("\nSaving enhanced synthetic dark matter dataset...")
 # Save to CSV with proper formatting
 dataset.to_csv('dark_matter_synthetic_dataset.csv', index=False, float_format='%.6f')
 
-# Save to JSON with proper formatting  
+# Save to JSON with proper formatting
 dataset_json = dataset.copy()
-# Convert timestamps to ISO format for JSON
-dataset_json['timestamp'] = dataset_json['timestamp'].astype(str)
-dataset_json.to_json('dark_matter_synthetic_dataset.json', orient='records', indent=2)
+# Convert timestamps to ISO format for JSON (safe conversion)
+dataset_json['timestamp'] = dataset_json['timestamp'].apply(lambda t: t.isoformat() if hasattr(t, 'isoformat') else str(t))
+# Replace NaN/NaT with None so json.dump doesn't choke
+dataset_json = dataset_json.where(pd.notnull(dataset_json), None)
+import json
+with open('dark_matter_synthetic_dataset.json', 'w', encoding='utf-8') as f:
+    json.dump(dataset_json.to_dict(orient='records'), f, indent=2, ensure_ascii=False)
 
 # Create a metadata file with dataset information
 metadata = {
