@@ -32,8 +32,7 @@ import {
   ChevronLeft, 
   ChevronRight,
   ChevronsLeft,
-  ChevronsRight,
-  Sparkles
+  ChevronsRight
 } from 'lucide-react';
 import EventDetailsModal from './EventDetailsModal';
 
@@ -235,37 +234,30 @@ export const DataTable = ({
 
   return (
     <>
-    <Card className="bg-[#1a1f2e] border-slate-600 shadow-lg rounded-xl border">
-      <CardHeader className="pb-6">
+    <Card className="backdrop-blur-md bg-card/50 border-white/10">
+      <CardHeader>
         <div className="flex items-center justify-between">
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-cyan-400" />
-              <CardTitle className="text-xl font-semibold text-white" style={{ textShadow: '0 0 15px rgba(34, 211, 238, 0.15)' }}>{title}</CardTitle>
-            </div>
-            <div className="w-12 h-0.5 bg-gradient-to-r from-purple-500 to-cyan-400 rounded-full"></div>
-          </div>
-          <div className="flex items-center gap-3">
+          <CardTitle>{title}</CardTitle>
+          <div className="flex items-center gap-2">
             {selectedRows.size > 0 && (
-              <Button size="sm" onClick={handleExport} className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white border-0 shadow-[0_4px_12px_rgba(34,197,94,0.25)] hover:shadow-[0_6px_20px_rgba(34,197,94,0.35)] hover:scale-[1.02] transition-all duration-300 font-semibold px-4 py-2 rounded-lg">
+              <Button size="sm" onClick={handleExport} className="bg-green-600 hover:bg-green-700">
                 <Download className="w-4 h-4 mr-2" />
                 Export Selected ({selectedRows.size})
               </Button>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="bg-transparent border-[1.5px] border-slate-500 text-slate-300 hover:bg-slate-700/30 hover:border-slate-400 hover:text-white transition-all duration-300 font-semibold px-4 py-2 rounded-lg">
+                <Button variant="outline" size="sm">
                   <Settings2 className="w-4 h-4 mr-2" />
                   Columns
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-slate-800 border-slate-600 rounded-lg">
+              <DropdownMenuContent align="end">
                 {columns.slice(0, -1).map(column => (
                   <DropdownMenuCheckboxItem
                     key={column.key}
                     checked={visibleColumns[column.key as keyof typeof visibleColumns]}
                     onCheckedChange={() => toggleColumnVisibility(column.key)}
-                    className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 transition-colors duration-200"
                   >
                     {column.label}
                   </DropdownMenuCheckboxItem>
@@ -275,67 +267,66 @@ export const DataTable = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-7">
+      <CardContent>
         {/* Controls */}
-        <div className="flex items-center justify-between mb-8 gap-6">
+        <div className="flex items-center justify-between mb-4 gap-4">
           <div className="flex items-center gap-4 flex-1">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search events..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 pr-4 py-3 bg-[#0f172a] border-[1.5px] border-slate-600 text-white placeholder:text-slate-500 font-medium rounded-md focus:border-blue-500 focus:bg-slate-800 focus:ring-3 focus:ring-blue-500/10 transition-all duration-200"
+                className="pl-10"
               />
             </div>
             <Select value={density} onValueChange={(value: Density) => setDensity(value)}>
-              <SelectTrigger className="w-36 bg-[#1e293b] border-[1.5px] border-slate-600 text-slate-300 hover:border-slate-500 focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 transition-all duration-200 font-medium rounded-md px-4 py-3">
+              <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600 rounded-lg">
-                <SelectItem value="comfortable" className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 transition-colors duration-200">Comfortable</SelectItem>
-                <SelectItem value="compact" className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 transition-colors duration-200">Compact</SelectItem>
-                <SelectItem value="dense" className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 transition-colors duration-200">Dense</SelectItem>
+              <SelectContent>
+                <SelectItem value="comfortable">Comfortable</SelectItem>
+                <SelectItem value="compact">Compact</SelectItem>
+                <SelectItem value="dense">Dense</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-400 font-medium">Rows per page:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Rows per page:</span>
             <Select value={pageSize.toString()} onValueChange={(value) => {
               setPageSize(parseInt(value));
               setCurrentPage(1);
             }}>
-              <SelectTrigger className="w-24 bg-[#1e293b] border-[1.5px] border-slate-600 text-slate-300 hover:border-slate-500 focus:border-blue-500 focus:ring-3 focus:ring-blue-500/10 transition-all duration-200 font-medium rounded-md px-3 py-3">
+              <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-slate-600 rounded-lg">
-                <SelectItem value="10" className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 transition-colors duration-200">10</SelectItem>
-                <SelectItem value="25" className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 transition-colors duration-200">25</SelectItem>
-                <SelectItem value="50" className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 transition-colors duration-200">50</SelectItem>
-                <SelectItem value="100" className="text-slate-300 hover:bg-slate-700 focus:bg-slate-700 transition-colors duration-200">100</SelectItem>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
 
         {/* Table */}
-        <div className="border border-slate-600 rounded-xl overflow-hidden bg-slate-800/30 shadow-inner">
+        <div className="border border-white/10 rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="border-slate-600 hover:bg-slate-700/30 bg-[#0d1117]">
-                <TableHead className="w-12 text-slate-400">
+              <TableRow className="border-white/10 hover:bg-muted/5">
+                <TableHead className="w-12">
                   <Checkbox
                     checked={selectedRows.size === paginatedData.length && paginatedData.length > 0}
                     onCheckedChange={handleSelectAll}
-                    className="border-slate-500 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
                 </TableHead>
                 {columns.map(column => 
                   visibleColumns[column.key as keyof typeof visibleColumns] && (
                     <TableHead 
                       key={column.key} 
-                      className={`${column.sortable ? 'cursor-pointer hover:bg-slate-700/50' : ''} select-none text-slate-400 text-xs uppercase font-semibold tracking-wider transition-colors duration-200 px-4 py-4`}
+                      className={`${column.sortable ? 'cursor-pointer hover:bg-muted/10' : ''} select-none`}
                       onClick={() => column.sortable && handleSort(column.key as SortField)}
                     >
                       <div className="flex items-center gap-2">
@@ -351,50 +342,50 @@ export const DataTable = ({
               {isLoading ? (
                 // Skeleton loading rows
                 Array.from({ length: pageSize }).map((_, index) => (
-                  <TableRow key={`skeleton-${index}`} className="border-slate-600 hover:bg-slate-700/30">
+                  <TableRow key={`skeleton-${index}`} className="border-white/10">
                     <TableCell className={densityClasses[density]}>
-                      <Skeleton className="h-4 w-4 bg-slate-700" />
+                      <Skeleton className="h-4 w-4" />
                     </TableCell>
                     {visibleColumns.id && (
                       <TableCell className={densityClasses[density]}>
-                        <Skeleton className="h-4 w-20 bg-slate-700" />
+                        <Skeleton className="h-4 w-20" />
                       </TableCell>
                     )}
                     {visibleColumns.energy && (
                       <TableCell className={densityClasses[density]}>
-                        <Skeleton className="h-4 w-16 bg-slate-700" />
+                        <Skeleton className="h-4 w-16" />
                       </TableCell>
                     )}
                     {visibleColumns.s1 && (
                       <TableCell className={densityClasses[density]}>
-                        <Skeleton className="h-4 w-16 bg-slate-700" />
+                        <Skeleton className="h-4 w-16" />
                       </TableCell>
                     )}
                     {visibleColumns.s2 && (
                       <TableCell className={densityClasses[density]}>
-                        <Skeleton className="h-4 w-16 bg-slate-700" />
+                        <Skeleton className="h-4 w-16" />
                       </TableCell>
                     )}
                     {visibleColumns.s2s1Ratio && (
                       <TableCell className={densityClasses[density]}>
-                        <Skeleton className="h-4 w-16 bg-slate-700" />
+                        <Skeleton className="h-4 w-16" />
                       </TableCell>
                     )}
                     {visibleColumns.type && (
                       <TableCell className={densityClasses[density]}>
-                        <Skeleton className="h-6 w-20 rounded-full bg-slate-700" />
+                        <Skeleton className="h-6 w-20 rounded-full" />
                       </TableCell>
                     )}
                     {visibleColumns.confidence && (
                       <TableCell className={densityClasses[density]}>
-                        <Skeleton className="h-4 w-12 bg-slate-700" />
+                        <Skeleton className="h-4 w-12" />
                       </TableCell>
                     )}
                     <TableCell className={densityClasses[density]}>
                       <div className="flex gap-2">
-                        <Skeleton className="h-8 w-8 rounded bg-slate-700" />
-                        <Skeleton className="h-8 w-8 rounded bg-slate-700" />
-                        <Skeleton className="h-8 w-8 rounded bg-slate-700" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -403,45 +394,43 @@ export const DataTable = ({
                 paginatedData.map((event, index) => (
                 <TableRow 
                   key={event.id} 
-                  className={`border-slate-600/30 hover:bg-slate-700/30 transition-colors duration-200 ${
-                    index % 2 === 1 ? 'bg-slate-800/20' : 'bg-slate-900/20'
-                  } ${selectedRows.has(event.id) ? 'bg-blue-900/20 border-blue-700/50' : ''}`}
-                  style={{ borderBottom: '1px solid rgba(51, 65, 85, 0.3)' }}
+                  className={`border-white/10 hover:bg-muted/10 transition-colors ${
+                    index % 2 === 1 ? 'bg-muted/5' : ''
+                  } ${selectedRows.has(event.id) ? 'bg-primary/10' : ''}`}
                 >
                   <TableCell className={densityClasses[density]}>
                     <Checkbox
                       checked={selectedRows.has(event.id)}
                       onCheckedChange={(checked) => handleSelectRow(event.id, checked as boolean)}
-                      className="border-slate-500 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                     />
                   </TableCell>
                   
                   {visibleColumns.id && (
-                    <TableCell className={`font-mono text-sm text-slate-300 ${densityClasses[density]}`}>
+                    <TableCell className={`font-mono text-sm ${densityClasses[density]}`}>
                       {event.id}
                     </TableCell>
                   )}
                   
                   {visibleColumns.energy && (
-                    <TableCell className={`font-mono text-sm text-slate-300 ${densityClasses[density]}`}>
+                    <TableCell className={`font-mono text-sm ${densityClasses[density]}`}>
                       {formatNumber(event.energy)}
                     </TableCell>
                   )}
                   
                   {visibleColumns.s1 && (
-                    <TableCell className={`font-mono text-sm text-slate-300 ${densityClasses[density]}`}>
+                    <TableCell className={`font-mono text-sm ${densityClasses[density]}`}>
                       {event.s1}
                     </TableCell>
                   )}
                   
                   {visibleColumns.s2 && (
-                    <TableCell className={`font-mono text-sm text-slate-300 ${densityClasses[density]}`}>
+                    <TableCell className={`font-mono text-sm ${densityClasses[density]}`}>
                       {event.s2}
                     </TableCell>
                   )}
                   
                   {visibleColumns.s2s1Ratio && (
-                    <TableCell className={`font-mono text-sm text-slate-300 ${densityClasses[density]}`}>
+                    <TableCell className={`font-mono text-sm ${densityClasses[density]}`}>
                       {formatNumber(event.s2s1Ratio, 2)}
                     </TableCell>
                   )}
@@ -450,7 +439,7 @@ export const DataTable = ({
                     <TableCell className={densityClasses[density]}>
                       <Badge 
                         variant="outline" 
-                        className={`${typeColors[event.type as keyof typeof typeColors] || 'bg-slate-700 text-slate-300 border-slate-600'} border font-medium`}
+                        className={typeColors[event.type as keyof typeof typeColors] || 'bg-muted text-muted-foreground'}
                       >
                         {event.type}
                       </Badge>
@@ -460,10 +449,10 @@ export const DataTable = ({
                   {visibleColumns.confidence && (
                     <TableCell className={densityClasses[density]}>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm text-slate-300">{event.confidence}%</span>
-                        <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <span className="font-mono text-sm">{event.confidence}%</span>
+                        <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
                           <div 
-                            className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500 transition-all duration-300"
+                            className="h-full bg-gradient-to-r from-red-500 via-yellow-500 to-green-500"
                             style={{ width: `${event.confidence}%` }}
                           />
                         </div>
@@ -478,7 +467,7 @@ export const DataTable = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => handleViewEvent(event)}
-                          className="h-8 w-8 p-0 text-slate-500 hover:text-cyan-400 hover:bg-slate-700/50 hover:scale-110 transition-all duration-200"
+                          className="h-8 w-8 p-0"
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
@@ -486,7 +475,7 @@ export const DataTable = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => onEdit?.(event)}
-                          className="h-8 w-8 p-0 text-slate-500 hover:text-cyan-400 hover:bg-slate-700/50 hover:scale-110 transition-all duration-200"
+                          className="h-8 w-8 p-0"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -494,7 +483,7 @@ export const DataTable = ({
                           size="sm"
                           variant="ghost"
                           onClick={() => onFlag?.(event)}
-                          className="h-8 w-8 p-0 text-orange-400 hover:text-orange-300 hover:bg-orange-900/20 hover:scale-110 transition-all duration-200"
+                          className="h-8 w-8 p-0 text-orange-400 hover:text-orange-300"
                         >
                           <Flag className="w-4 h-4" />
                         </Button>
@@ -509,8 +498,8 @@ export const DataTable = ({
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-700/50">
-          <div className="text-sm text-slate-400 font-medium">
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-muted-foreground">
             Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, filteredAndSortedData.length)} of {filteredAndSortedData.length} entries
             {searchTerm && ` (filtered from ${data.length} total)`}
           </div>
@@ -521,7 +510,6 @@ export const DataTable = ({
               size="sm"
               onClick={() => setCurrentPage(1)}
               disabled={currentPage === 1}
-              className="bg-transparent border-[1.5px] border-slate-600 text-slate-400 hover:bg-slate-700/30 hover:border-slate-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 font-medium rounded-md px-3 py-2"
             >
               <ChevronsLeft className="w-4 h-4" />
             </Button>
@@ -530,12 +518,11 @@ export const DataTable = ({
               size="sm"
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
-              className="bg-transparent border-[1.5px] border-slate-600 text-slate-400 hover:bg-slate-700/30 hover:border-slate-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 font-medium rounded-md px-3 py-2"
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             
-            <span className="text-sm text-slate-400 px-4 py-2 font-medium bg-slate-800/30 rounded-md border border-slate-700/50">
+            <span className="text-sm text-muted-foreground px-2">
               Page {currentPage} of {totalPages}
             </span>
             
@@ -544,7 +531,6 @@ export const DataTable = ({
               size="sm"
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
-              className="bg-transparent border-[1.5px] border-slate-600 text-slate-400 hover:bg-slate-700/30 hover:border-slate-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 font-medium rounded-md px-3 py-2"
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
@@ -553,7 +539,6 @@ export const DataTable = ({
               size="sm"
               onClick={() => setCurrentPage(totalPages)}
               disabled={currentPage === totalPages}
-              className="bg-transparent border-[1.5px] border-slate-600 text-slate-400 hover:bg-slate-700/30 hover:border-slate-500 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 font-medium rounded-md px-3 py-2"
             >
               <ChevronsRight className="w-4 h-4" />
             </Button>

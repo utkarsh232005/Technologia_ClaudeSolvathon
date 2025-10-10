@@ -25,7 +25,10 @@ import {
   Clock,
   AlertTriangle,
   BarChart3,
-  ExternalLink
+  ExternalLink,
+  Shield,
+  Sparkles,
+  Box
 } from 'lucide-react';
 
 interface EventData {
@@ -388,7 +391,7 @@ const EventClassifier = () => {
     return '--';
   };
 
-  const loadExample = (type: 'wimp' | 'background') => {
+  const loadExample = (type: 'wimp' | 'background' | 'neutrino') => {
     if (type === 'wimp') {
       setEventData({
         recoilEnergy: '12.5',
@@ -400,7 +403,7 @@ const EventClassifier = () => {
         positionZ: '15.7',
         timestamp: new Date().toISOString().slice(0, 16)
       });
-    } else {
+    } else if (type === 'background') {
       setEventData({
         recoilEnergy: '8.2',
         s1Signal: '120',
@@ -409,6 +412,17 @@ const EventClassifier = () => {
         positionX: '0.8',
         positionY: '3.2',
         positionZ: '8.1',
+        timestamp: new Date().toISOString().slice(0, 16)
+      });
+    } else if (type === 'neutrino') {
+      setEventData({
+        recoilEnergy: '25.8',
+        s1Signal: '78',
+        s2Signal: '4200',
+        pulseShape: '0.15',
+        positionX: '-2.5',
+        positionY: '1.8',
+        positionZ: '22.3',
         timestamp: new Date().toISOString().slice(0, 16)
       });
     }
@@ -423,248 +437,447 @@ const EventClassifier = () => {
       title="Event Classifier"
       description="AI-powered classification to distinguish WIMP signals from background noise"
     >
+      {/* Premium Header with Gradient Text */}
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-3 bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent leading-tight">
+          Dark Matter Event Classifier
+        </h1>
+        <p className="text-lg text-slate-300 max-w-3xl">
+          Leverage advanced machine learning to distinguish WIMP signals from background noise with high precision analysis.
+        </p>
+      </div>
+
       <Tabs defaultValue="single" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="single">Single Event</TabsTrigger>
-          <TabsTrigger value="batch">Batch Processing</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mb-8 h-12 bg-slate-800/60 border border-slate-700">
+          <TabsTrigger 
+            value="single" 
+            className="text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+          >
+            Single Event Analysis
+          </TabsTrigger>
+          <TabsTrigger 
+            value="batch" 
+            className="text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
+          >
+            Batch Processing
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="single">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Side - Event Input Form */}
-            <Card className="backdrop-blur-md bg-card/50 border-white/10">
-              <CardHeader>
-                <CardTitle className="section-heading">Event Input</CardTitle>
-                <CardDescription>Enter event parameters for classification</CardDescription>
-              </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Quick-fill buttons */}
-            <div className="flex gap-2 mb-4">
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+            {/* Left Panel - Event Input (55% width) */}
+            <div className="xl:col-span-3 space-y-6">
+              <Card className="backdrop-blur-md bg-slate-800/40 border border-slate-700/50 shadow-2xl">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-purple-600/20 to-blue-600/20 border border-purple-500/30">
+                      <Shield className="w-5 h-5 text-cyan-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl font-semibold text-white flex items-center gap-2">
+                        Event Data Input
+                        <div className="h-px bg-gradient-to-r from-cyan-400 to-blue-500 flex-1 ml-4"></div>
+                      </CardTitle>
+                      <CardDescription className="text-slate-400 mt-1">
+                        Enter precise detector measurements for classification analysis
+                      </CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Example Data Quick-Load Section */}
+            <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
+              <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blue-400" />
+                Quick Load Example Data
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <Button 
+                  variant="outline-example" 
+                  size="sm" 
+                  onClick={() => loadExample('wimp')}
+                  className="w-full"
+                >
+                  <Box className="w-4 h-4 mr-2" />
+                  WIMP Candidate
+                </Button>
+                <Button 
+                  variant="outline-example" 
+                  size="sm" 
+                  onClick={() => loadExample('background')}
+                  className="w-full"
+                >
+                  <Box className="w-4 h-4 mr-2" />
+                  Background Event
+                </Button>
+                <Button 
+                  variant="outline-example" 
+                  size="sm" 
+                  onClick={() => loadExample('neutrino')}
+                  className="w-full"
+                >
+                  <Box className="w-4 h-4 mr-2" />
+                  Neutrino Event
+                </Button>
+              </div>
+            </div>
+
+            {/* Primary Detector Signals */}
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                Primary Detector Signals
+                <div className="h-px bg-gradient-to-r from-blue-500/50 to-transparent flex-1 ml-3"></div>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recoilEnergy" className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    Recoil Energy
+                    <span className="text-xs text-slate-500">(keV)</span>
+                  </Label>
+                  <Input
+                    id="recoilEnergy"
+                    type="number"
+                    value={eventData.recoilEnergy}
+                    onChange={(e) => handleInputChange('recoilEnergy', e.target.value)}
+                    placeholder="0.0"
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="s1Signal" className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    S1 Signal
+                    <span className="text-xs text-slate-500">(PE)</span>
+                  </Label>
+                  <Input
+                    id="s1Signal"
+                    type="number"
+                    value={eventData.s1Signal}
+                    onChange={(e) => handleInputChange('s1Signal', e.target.value)}
+                    placeholder="0"
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="s2Signal" className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    S2 Signal
+                    <span className="text-xs text-slate-500">(PE)</span>
+                  </Label>
+                  <Input
+                    id="s2Signal"
+                    type="number"
+                    value={eventData.s2Signal}
+                    onChange={(e) => handleInputChange('s2Signal', e.target.value)}
+                    placeholder="0"
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="pulseShape" className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    Pulse Shape
+                    <span className="text-xs text-slate-500">(0-1)</span>
+                  </Label>
+                  <Input
+                    id="pulseShape"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    max="1"
+                    value={eventData.pulseShape}
+                    onChange={(e) => handleInputChange('pulseShape', e.target.value)}
+                    placeholder="0.00"
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Spatial Coordinates */}
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                Spatial Coordinates
+                <div className="h-px bg-gradient-to-r from-blue-500/50 to-transparent flex-1 ml-3"></div>
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="positionX" className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    X Position
+                    <span className="text-xs text-slate-500">(cm)</span>
+                  </Label>
+                  <Input
+                    id="positionX"
+                    type="number"
+                    value={eventData.positionX}
+                    onChange={(e) => handleInputChange('positionX', e.target.value)}
+                    placeholder="0.0"
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="positionY" className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    Y Position
+                    <span className="text-xs text-slate-500">(cm)</span>
+                  </Label>
+                  <Input
+                    id="positionY"
+                    type="number"
+                    value={eventData.positionY}
+                    onChange={(e) => handleInputChange('positionY', e.target.value)}
+                    placeholder="0.0"
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="positionZ" className="text-sm font-medium text-slate-300 flex items-center gap-2">
+                    Z Position
+                    <span className="text-xs text-slate-500">(cm)</span>
+                  </Label>
+                  <Input
+                    id="positionZ"
+                    type="number"
+                    value={eventData.positionZ}
+                    onChange={(e) => handleInputChange('positionZ', e.target.value)}
+                    placeholder="0.0"
+                    className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Timestamp */}
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-white flex items-center gap-2">
+                Event Metadata
+                <div className="h-px bg-gradient-to-r from-blue-500/50 to-transparent flex-1 ml-3"></div>
+              </h3>
+              
+              <div className="space-y-2">
+                <Label htmlFor="timestamp" className="text-sm font-medium text-slate-300">
+                  Event Timestamp
+                </Label>
+                <Input
+                  id="timestamp"
+                  type="datetime-local"
+                  value={eventData.timestamp}
+                  onChange={(e) => handleInputChange('timestamp', e.target.value)}
+                  className="bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-500 focus:border-blue-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Calculated Metrics */}
+            <div className="bg-slate-700/30 rounded-lg p-4 border border-slate-600/50">
+              <h3 className="text-sm font-semibold text-slate-300 mb-3">Calculated Metrics</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400 font-medium mb-1">S2/S1 Ratio</div>
+                  <div className="text-lg font-bold text-cyan-400">{calculateS2S1Ratio()}</div>
+                </div>
+                <div className="bg-slate-800/50 rounded-lg p-3 text-center">
+                  <div className="text-xs text-slate-400 font-medium mb-1">Event Quality</div>
+                  <div className="text-lg font-bold text-green-400">
+                    {eventData.s1Signal && eventData.s2Signal ? 'Valid' : 'Incomplete'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Primary Classification Button */}
+            <div className="pt-4">
               <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => loadExample('wimp')}
-                className="flex-1"
-              >
-                Load WIMP Example
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => loadExample('background')}
-                className="flex-1"
-              >
-                Load Background Example
-              </Button>
-            </div>
-
-            {/* Input fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="recoilEnergy">Recoil Energy (keV)</Label>
-                <Input
-                  id="recoilEnergy"
-                  type="number"
-                  value={eventData.recoilEnergy}
-                  onChange={(e) => handleInputChange('recoilEnergy', e.target.value)}
-                  placeholder="0.0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="s1Signal">S1 Signal (PE)</Label>
-                <Input
-                  id="s1Signal"
-                  type="number"
-                  value={eventData.s1Signal}
-                  onChange={(e) => handleInputChange('s1Signal', e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="s2Signal">S2 Signal (PE)</Label>
-                <Input
-                  id="s2Signal"
-                  type="number"
-                  value={eventData.s2Signal}
-                  onChange={(e) => handleInputChange('s2Signal', e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="pulseShape">Pulse Shape (0-1)</Label>
-                <Input
-                  id="pulseShape"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="1"
-                  value={eventData.pulseShape}
-                  onChange={(e) => handleInputChange('pulseShape', e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="positionX">Position X (cm)</Label>
-                <Input
-                  id="positionX"
-                  type="number"
-                  value={eventData.positionX}
-                  onChange={(e) => handleInputChange('positionX', e.target.value)}
-                  placeholder="0.0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="positionY">Position Y (cm)</Label>
-                <Input
-                  id="positionY"
-                  type="number"
-                  value={eventData.positionY}
-                  onChange={(e) => handleInputChange('positionY', e.target.value)}
-                  placeholder="0.0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="positionZ">Position Z (cm)</Label>
-                <Input
-                  id="positionZ"
-                  type="number"
-                  value={eventData.positionZ}
-                  onChange={(e) => handleInputChange('positionZ', e.target.value)}
-                  placeholder="0.0"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="timestamp">Timestamp</Label>
-              <Input
-                id="timestamp"
-                type="datetime-local"
-                value={eventData.timestamp}
-                onChange={(e) => handleInputChange('timestamp', e.target.value)}
-              />
-            </div>
-
-            {/* S2/S1 Ratio Display */}
-            <div className="stat-card text-center">
-              <div className="text-sm text-muted-foreground font-medium">S2/S1 Ratio</div>
-              <div className="stat-number text-2xl">{calculateS2S1Ratio()}</div>
-            </div>
-
-            {/* Action buttons */}
-            <div className="space-y-2">
-              <Button 
-                variant="premium"
-                className="w-full group"
+                variant="premium" 
+                size="xl" 
                 onClick={classifyEvent}
+                className="w-full h-14 text-lg font-semibold"
+                disabled={!eventData.recoilEnergy || !eventData.s1Signal || !eventData.s2Signal}
               >
-                <Brain className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
-                Classify Event
+                <Brain className="w-6 h-6 mr-3" />
+                Classify Event with AI
+                <Sparkles className="w-5 h-5 ml-3" />
               </Button>
-              <Button variant="outline" className="w-full group">
-                <Upload className="w-4 h-4 mr-2 transition-transform duration-300 group-hover:translate-x-1" />
-                Upload CSV for Batch
-              </Button>
+              {(!eventData.recoilEnergy || !eventData.s1Signal || !eventData.s2Signal) && (
+                <p className="text-xs text-slate-400 mt-2 text-center">
+                  Please fill in recoil energy, S1, and S2 signals to classify
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
+      </div>
 
-        {/* Right Side - Classification Result */}
-        <Card className="backdrop-blur-md bg-card/50 border-white/10">
-          <CardHeader>
-            <CardTitle className="section-heading">Classification Result</CardTitle>
-            <CardDescription>AI analysis and confidence assessment</CardDescription>
+      {/* Right Panel - Results and Analysis (45% width) */}
+      <div className="xl:col-span-2 space-y-6">
+        {/* Classification Results and Analysis Panel */}
+        <Card className="backdrop-blur-md bg-slate-800/40 border border-slate-700/50 shadow-2xl">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-blue-600/20 to-purple-600/20 border border-blue-500/30">
+                <Brain className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl font-semibold text-white flex items-center gap-2">
+                  AI Classification Results
+                  <div className="h-px bg-gradient-to-r from-blue-400 to-purple-500 flex-1 ml-4"></div>
+                </CardTitle>
+                <CardDescription className="text-slate-400 mt-1">
+                  Advanced machine learning analysis with confidence metrics
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             {!isClassified ? (
-              <div className="flex items-center justify-center h-96 text-muted-foreground">
-                <div className="text-center">
-                  <Brain className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                  <p>Enter event data and click "Classify Event" to see results</p>
+              <div className="flex items-center justify-center h-96 text-slate-400">
+                <div className="text-center space-y-4">
+                  <div className="w-24 h-24 mx-auto rounded-full bg-gradient-to-br from-slate-700/50 to-slate-800/50 border border-slate-600/50 flex items-center justify-center">
+                    <Brain className="w-12 h-12 text-slate-500 animate-pulse" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-medium text-slate-300 mb-2">Awaiting Event Data</p>
+                    <p className="text-sm text-slate-500">Complete the form and click "Classify Event" to begin AI analysis</p>
+                  </div>
                 </div>
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Result Label */}
-                <div className="text-center p-6 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                  <div className="text-3xl font-bold text-blue-400 mb-2">WIMP-Like Candidate</div>
-                  <div className="text-sm text-muted-foreground">High probability dark matter signal</div>
+                {/* Primary Classification Result */}
+                <div className="relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-cyan-600/10 rounded-lg"></div>
+                  <div className="relative bg-slate-800/60 border border-blue-500/30 rounded-lg p-6 text-center backdrop-blur-sm">
+                    <div className="flex items-center justify-center gap-3 mb-3">
+                      <CheckCircle className="w-8 h-8 text-green-400" />
+                      <div className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                        WIMP-Like Candidate
+                      </div>
+                    </div>
+                    <div className="text-sm text-slate-400 mb-4">
+                      High probability dark matter interaction detected
+                    </div>
+                    <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                      Confidence: 94.7%
+                    </Badge>
+                  </div>
                 </div>
 
-                {/* Confidence Gauge */}
-                <div className="text-center">
-                  <div className="text-sm text-muted-foreground mb-2">Confidence</div>
-                  <div className="relative w-32 h-32 mx-auto mb-4">
-                    <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        className="text-muted/20"
-                      />
-                      <circle
-                        cx="50"
-                        cy="50"
-                        r="40"
-                        stroke="currentColor"
-                        strokeWidth="8"
-                        fill="transparent"
-                        strokeDasharray={`${87 * 2.51} ${100 * 2.51}`}
-                        className="text-blue-400"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-2xl font-bold text-blue-400">87%</span>
+                {/* Confidence Visualization */}
+                <div className="bg-slate-700/30 rounded-lg p-5 border border-slate-600/50">
+                  <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                    Confidence Analysis
+                    <div className="h-px bg-gradient-to-r from-green-500/50 to-transparent flex-1 ml-3"></div>
+                  </h3>
+                  <div className="flex items-center justify-center">
+                    <div className="relative w-32 h-32">
+                      {/* Background circle */}
+                      <svg className="w-32 h-32 transform -rotate-90" viewBox="0 0 100 100">
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          fill="transparent"
+                          className="text-slate-600"
+                        />
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          fill="transparent"
+                          strokeDasharray={`${94.7 * 2.51} ${100 * 2.51}`}
+                          className="text-green-400"
+                          style={{
+                            strokeLinecap: 'round',
+                            filter: 'drop-shadow(0 0 8px rgba(34, 197, 94, 0.3))'
+                          }}
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-green-400">94.7%</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-3 text-center text-sm">
+                    <div>
+                      <div className="text-xs text-slate-400 mb-1">WIMP Score</div>
+                      <div className="font-semibold text-green-400">94.7%</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-400 mb-1">Background</div>
+                      <div className="font-semibold text-orange-400">4.8%</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-400 mb-1">Anomaly</div>
+                      <div className="font-semibold text-red-400">0.5%</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Key Features */}
-                <div>
-                  <h4 className="font-semibold mb-3 text-foreground">Key Features</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm">Low recoil energy (12.5 keV)</span>
+                {/* Signal Characteristics */}
+                <div className="bg-slate-700/30 rounded-lg p-5 border border-slate-600/50">
+                  <h3 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
+                    Signal Characteristics
+                    <div className="h-px bg-gradient-to-r from-blue-500/50 to-transparent flex-1 ml-3"></div>
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3 p-3 bg-slate-800/40 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Low Recoil Energy</div>
+                        <div className="text-xs text-slate-400">12.5 keV - typical WIMP range</div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm">High S2/S1 ratio (7.11)</span>
+                    
+                    <div className="flex items-center gap-3 p-3 bg-slate-800/40 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Optimal S2/S1 Ratio</div>
+                        <div className="text-xs text-slate-400">7.11 - nuclear recoil signature</div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm">Nuclear recoil-like pulse shape</span>
+                    
+                    <div className="flex items-center gap-3 p-3 bg-slate-800/40 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Pulse Shape Match</div>
+                        <div className="text-xs text-slate-400">Nuclear recoil-like signature</div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-green-400" />
-                      <span className="text-sm">Fiducial volume position</span>
+                    
+                    <div className="flex items-center gap-3 p-3 bg-slate-800/40 rounded-lg">
+                      <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Fiducial Position</div>
+                        <div className="text-xs text-slate-400">Within active detector volume</div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Expandable Reasoning Explorer */}
+                {/* Detailed Analysis Expandable */}
                 <Collapsible open={isReasoningOpen} onOpenChange={setIsReasoningOpen}>
                   <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-0">
-                      <span className="font-semibold">View Full Reasoning</span>
-                      <ChevronDown className={`w-4 h-4 transition-transform ${isReasoningOpen ? 'rotate-180' : ''}`} />
+                    <Button variant="expandable" className="w-full">
+                      <span className="font-medium">Detailed AI Reasoning & Analysis</span>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isReasoningOpen ? 'rotate-180' : ''}`} />
                     </Button>
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-3">
+                  <CollapsibleContent className="mt-4">
                     <div className="space-y-4">
-                      {/* Main Analysis Tree */}
-                      <div className="bg-muted/10 rounded-lg p-4 font-mono text-sm">
+                      {/* Analysis Decision Tree */}
+                      <div className="bg-slate-800/40 rounded-lg p-4 border border-slate-600/30">
                         <div className="flex items-center justify-between mb-3">
-                          <h4 className="font-semibold font-sans">Analysis Tree</h4>
+                          <h4 className="font-semibold text-white">ML Decision Tree Analysis</h4>
                           <Button 
                             size="sm" 
                             variant="ghost" 
@@ -882,19 +1095,22 @@ const EventClassifier = () => {
                   </CollapsibleContent>
                 </Collapsible>
 
-                {/* Flag as Anomaly Button */}
-                <Button variant="outline" className="w-full border-orange-500/50 text-orange-400 hover:bg-orange-500/10">
-                  <Flag className="w-4 h-4 mr-2" />
-                  Flag as Anomaly
-                </Button>
+                {/* Action Buttons */}
+                <div className="pt-4 border-t border-slate-700/50">
+                  <Button variant="danger-outline" className="w-full">
+                    <Flag className="w-4 h-4 mr-2" />
+                    Flag as Anomaly for Review
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
-    </TabsContent>
+    </div>
+  </TabsContent>
 
-    <TabsContent value="batch">
+  <TabsContent value="batch">
       <div className="space-y-6">
         {/* File Upload Section */}
         {!batchState.uploadedFile && (

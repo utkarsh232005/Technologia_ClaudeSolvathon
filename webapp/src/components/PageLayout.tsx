@@ -21,7 +21,7 @@ const PageLayout = ({ children, title, description, showFooter = true }: PageLay
               {title}
             </h1>
             {description && (
-              <p className="text-slate-400 text-base sm:text-lg page-transition">{description}</p>
+              <p className="text-muted-foreground text-base sm:text-lg page-transition">{description}</p>
             )}
           </div>
           

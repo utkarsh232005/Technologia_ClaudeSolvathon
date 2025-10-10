@@ -148,19 +148,41 @@ All colors MUST be HSL.
   }
   
   .btn-premium:hover {
-    @apply from-purple-700 to-blue-700;
-  }
-  
-  .btn-premium svg {
-    @apply transition-transform duration-300;
-  }
-  
-  .btn-premium:hover svg {
-    transform: translateX(4px);
+    @apply from-purple-700 to-blue-700 shadow-purple-600/50;
+    transform: scale(1.02) translateY(-1px);
   }
 
-  /* Refined title with subtle effects */
-  .title-gradient {
+  .btn-premium:active {
+    transform: scale(0.98);
+  }
+
+  /* Enhanced stat cards for metrics */
+  .stat-card {
+    @apply bg-slate-700/40 border border-slate-600 rounded-xl p-4 backdrop-blur-sm transition-all duration-300 ease-out hover:bg-slate-600/50 hover:border-slate-500 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-500/10;
+    animation: fadeInUp 0.6s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  .stat-number {
+    @apply font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent;
+  }
+
+  /* Keyframe animations */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Refined title with subtle effects */
+.title-gradient {
     background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%);
     background-clip: text;
     -webkit-background-clip: text;
@@ -674,4 +696,3 @@ All colors MUST be HSL.
       transform: none;
     }
   }
-}
