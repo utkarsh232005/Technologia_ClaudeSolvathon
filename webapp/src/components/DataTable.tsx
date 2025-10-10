@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -54,6 +55,7 @@ interface DataTableProps {
   onEdit?: (event: EventData) => void;
   onFlag?: (event: EventData) => void;
   onExport?: (events: EventData[]) => void;
+  isLoading?: boolean;
 }
 
 type SortField = keyof EventData | 's2s1Ratio';
@@ -80,7 +82,8 @@ export const DataTable = ({
   onViewDetails, 
   onEdit, 
   onFlag, 
-  onExport 
+  onExport,
+  isLoading = false
 }: DataTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState<SortField>('id');
@@ -336,7 +339,59 @@ export const DataTable = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedData.map((event, index) => (
+              {isLoading ? (
+                // Skeleton loading rows
+                Array.from({ length: pageSize }).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`} className="border-white/10">
+                    <TableCell className={densityClasses[density]}>
+                      <Skeleton className="h-4 w-4" />
+                    </TableCell>
+                    {visibleColumns.id && (
+                      <TableCell className={densityClasses[density]}>
+                        <Skeleton className="h-4 w-20" />
+                      </TableCell>
+                    )}
+                    {visibleColumns.energy && (
+                      <TableCell className={densityClasses[density]}>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                    )}
+                    {visibleColumns.s1 && (
+                      <TableCell className={densityClasses[density]}>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                    )}
+                    {visibleColumns.s2 && (
+                      <TableCell className={densityClasses[density]}>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                    )}
+                    {visibleColumns.s2s1Ratio && (
+                      <TableCell className={densityClasses[density]}>
+                        <Skeleton className="h-4 w-16" />
+                      </TableCell>
+                    )}
+                    {visibleColumns.type && (
+                      <TableCell className={densityClasses[density]}>
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                      </TableCell>
+                    )}
+                    {visibleColumns.confidence && (
+                      <TableCell className={densityClasses[density]}>
+                        <Skeleton className="h-4 w-12" />
+                      </TableCell>
+                    )}
+                    <TableCell className={densityClasses[density]}>
+                      <div className="flex gap-2">
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                        <Skeleton className="h-8 w-8 rounded" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                paginatedData.map((event, index) => (
                 <TableRow 
                   key={event.id} 
                   className={`border-white/10 hover:bg-muted/10 transition-colors ${
@@ -436,7 +491,8 @@ export const DataTable = ({
                     </TableCell>
                   )}
                 </TableRow>
-              ))}
+              ))
+              )}
             </TableBody>
           </Table>
         </div>

@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import PageLayout from '@/components/PageLayout';
 import DataTable, { EventData } from '@/components/DataTable';
+import { LoadingSpinner, ProgressBar } from '@/components/LoadingComponents';
+import { showToast } from '@/lib/toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,11 +25,13 @@ const DataGenerator = () => {
 
   const generateSyntheticData = async () => {
     setIsGenerating(true);
+    showToast.loading('Generating synthetic data...');
     
-    // Simulate generation delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const events: EventData[] = [];
+    try {
+      // Simulate generation delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const events: EventData[] = [];
     
     for (let i = 1; i <= config.numEvents; i++) {
       // Random event type based on ratios
@@ -93,7 +97,13 @@ const DataGenerator = () => {
     }
 
     setGeneratedData(events);
-    setIsGenerating(false);
+    showToast.success(`Successfully generated ${events.length} synthetic events`);
+    } catch (error) {
+      showToast.error('Failed to generate synthetic data');
+      console.error('Generation error:', error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const resetData = () => {

@@ -29,6 +29,11 @@ All colors MUST be HSL.
     --accent: 270 80% 70%;
     --accent-foreground: 250 50% 10%;
 
+    /* Animation durations */
+    --duration-150: 150ms;
+    --duration-300: 300ms;
+    --duration-500: 500ms;
+
     --destructive: 0 62.8% 50%;
     --destructive-foreground: 210 40% 98%;
 
@@ -58,6 +63,95 @@ All colors MUST be HSL.
 @layer base {
   * {
     @apply border-border;
+  }
+
+  /* Smooth scrolling for anchor links */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--muted));
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground));
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--primary));
+  }
+}
+
+@layer components {
+  /* Card hover animations */
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+    transform: translateY(0);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.3), 0 10px 10px -5px rgb(0 0 0 / 0.2);
+  }
+
+  /* Button click feedback */
+  .btn-click {
+    @apply transition-all duration-150 ease-out;
+    transform: scale(1);
+  }
+
+  .btn-click:active {
+    transform: scale(0.95);
+  }
+
+  /* Page transition */
+  .page-transition {
+    @apply transition-all duration-300 ease-out;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .page-transition-enter {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  /* Focus visible for accessibility */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* High contrast mode support */
+  @media (prefers-contrast: high) {
+    .text-muted-foreground {
+      @apply text-foreground;
+    }
+    
+    .border-white\/10 {
+      @apply border-white/50;
+    }
+  }
+
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    .card-hover:hover {
+      transform: none;
+    }
+    
+    .btn-click:active {
+      transform: none;
+    }
+    
+    .page-transition {
+      transition: none;
+    }
   }
 
   body {
