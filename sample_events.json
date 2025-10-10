@@ -1,0 +1,52 @@
+[
+  {
+    "id": "EVT-101",
+    "energy": 22.5,
+    "s1": 98,
+    "s2": 1850,
+    "position_x": 1.4,
+    "position_y": -0.8,
+    "position_z": 16.2,
+    "timestamp": "2024-10-10T11:00:00Z"
+  },
+  {
+    "id": "EVT-102",
+    "energy": 7.8,
+    "s1": 42,
+    "s2": 315,
+    "position_x": 0.7,
+    "position_y": 1.9,
+    "position_z": 12.8,
+    "timestamp": "2024-10-10T11:01:00Z"
+  },
+  {
+    "id": "EVT-103",
+    "energy": 38.2,
+    "s1": 142,
+    "s2": 4120,
+    "position_x": 2.6,
+    "position_y": -1.2,
+    "position_z": 18.9,
+    "timestamp": "2024-10-10T11:02:00Z"
+  },
+  {
+    "id": "EVT-104",
+    "energy": 14.6,
+    "s1": 67,
+    "s2": 845,
+    "position_x": 1.1,
+    "position_y": 0.5,
+    "position_z": 15.3,
+    "timestamp": "2024-10-10T11:03:00Z"
+  },
+  {
+    "id": "EVT-105",
+    "energy": 31.4,
+    "s1": 128,
+    "s2": 2980,
+    "position_x": 2.2,
+    "position_y": 1.7,
+    "position_z": 17.8,
+    "timestamp": "2024-10-10T11:04:00Z"
+  }
+]

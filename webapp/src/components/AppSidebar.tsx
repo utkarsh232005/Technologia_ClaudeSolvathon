@@ -1,4 +1,4 @@
-import { Home, Beaker, Search, BarChart, FileText } from 'lucide-react';
+import { Home, Beaker, Search, BarChart, FileText, Settings, HelpCircle } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import {
   Sidebar,
@@ -19,6 +19,8 @@ const menuItems = [
   { title: 'Event Classifier', url: '/classifier', icon: Search },
   { title: 'Results Dashboard', url: '/results', icon: BarChart },
   { title: 'Report Generator', url: '/reports', icon: FileText },
+  { title: 'Settings', url: '/settings', icon: Settings },
+  { title: 'Help', url: '/help', icon: HelpCircle },
 ];
 
 export function AppSidebar() {
