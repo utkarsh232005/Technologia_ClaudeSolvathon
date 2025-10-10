@@ -1,0 +1,15 @@
+# Classification System - Generated Files
+
+# Results
+results/*.json
+
+# Explanations
+explanations/*.md
+
+# Keep folder structure
+!results/.gitkeep
+!explanations/.gitkeep
+
+# Python cache
+__pycache__/
+*.pyc
