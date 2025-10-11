@@ -1,4 +1,4 @@
-import { Home, Beaker, Search, BarChart, FileText, Settings, HelpCircle } from 'lucide-react';
+import { Home, Beaker, Search, BarChart, FileText, Settings, HelpCircle, AlertTriangle } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { AnimatedSidebarLink, useAnimatedSidebar } from '@/components/ui/animated-sidebar';
 import { motion } from 'motion/react';
@@ -8,6 +8,7 @@ const menuItems = [
   { label: 'Home', href: '/', icon: Home },
   { label: 'Data Generator', href: '/data-generator', icon: Beaker },
   { label: 'Event Classifier', href: '/classifier', icon: Search },
+  { label: 'Anomaly Detection', href: '/anomaly-detection', icon: AlertTriangle },
   { label: 'Results Dashboard', href: '/results', icon: BarChart },
   { label: 'Report Generator', href: '/reports', icon: FileText },
   { label: 'Settings', href: '/settings', icon: Settings },

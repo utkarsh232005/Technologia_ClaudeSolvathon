@@ -20,6 +20,7 @@ const AnimatedSidebarContext = createContext<AnimatedSidebarContextProps | undef
     undefined
 );
 
+// @refresh reset
 export const useAnimatedSidebar = () => {
     const context = useContext(AnimatedSidebarContext);
     if (!context) {
@@ -73,7 +74,11 @@ export const AnimatedSidebarBody = (props: React.ComponentProps<typeof motion.di
     return (
         <>
             <DesktopAnimatedSidebar {...props} />
-            <MobileAnimatedSidebar {...(props as React.ComponentProps<"div">)} />
+            <MobileAnimatedSidebar
+                className={props.className as string | undefined}
+            >
+                {props.children as React.ReactNode}
+            </MobileAnimatedSidebar>
         </>
     );
 };

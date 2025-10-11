@@ -68,8 +68,8 @@ interface BatchProcessingState {
   isUploading: boolean;
   isProcessing: boolean;
   uploadedFile: File | null;
-  fileData: any[];
-  previewData: any[];
+  fileData: Record<string, unknown>[];
+  previewData: Record<string, unknown>[];
   processedResults: ProcessingResult[];
   currentIndex: number;
   totalEvents: number;
@@ -174,14 +174,14 @@ const EventClassifier = () => {
   };
 
   // Utility functions for file processing
-  const parseCSV = (csvText: string): any[] => {
+  const parseCSV = useCallback((csvText: string): Record<string, unknown>[] => {
     const lines = csvText.trim().split('\n');
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-    const data = [];
+    const data: Record<string, unknown>[] = [];
 
     for (let i = 1; i < lines.length; i++) {
       const values = lines[i].split(',');
-      const row: any = {};
+      const row: Record<string, unknown> = {};
       headers.forEach((header, index) => {
         row[header] = values[index]?.trim();
       });
@@ -189,9 +189,9 @@ const EventClassifier = () => {
     }
 
     return data;
-  };
+  }, []);
 
-  const validateFileData = (data: any[]): string[] => {
+  const validateFileData = useCallback((data: Record<string, unknown>[]): string[] => {
     const errors: string[] = [];
 
     if (data.length === 0) {
@@ -223,14 +223,14 @@ const EventClassifier = () => {
     }
 
     return errors;
-  };
+  }, []);
 
-  const processFileUpload = async (file: File) => {
+  const processFileUpload = useCallback(async (file: File) => {
     setBatchState(prev => ({ ...prev, isUploading: true, errors: [], validationErrors: [] }));
 
     try {
       const text = await file.text();
-      let data: any[] = [];
+      let data: Record<string, unknown>[] = [];
 
       if (file.name.endsWith('.json')) {
         data = JSON.parse(text);
@@ -262,7 +262,7 @@ const EventClassifier = () => {
         errors: [error instanceof Error ? error.message : "Failed to process file"]
       }));
     }
-  };
+  }, [parseCSV, validateFileData]);
 
   // Real batch processing functions using backend API
 
@@ -394,7 +394,7 @@ const EventClassifier = () => {
     if (file) {
       processFileUpload(file);
     }
-  }, []);
+  }, [processFileUpload]);
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -467,14 +467,14 @@ const EventClassifier = () => {
 
       <Tabs defaultValue="single" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-8 h-12 bg-slate-800/60 border border-slate-700">
-          <TabsTrigger 
-            value="single" 
+          <TabsTrigger
+            value="single"
             className="text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
           >
             Single Event Analysis
           </TabsTrigger>
-          <TabsTrigger 
-            value="batch" 
+          <TabsTrigger
+            value="batch"
             className="text-sm font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
           >
             Batch Processing

@@ -1,27 +1,29 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import PageLayout from '@/components/PageLayout';
 import DataTable, { EventData } from '@/components/DataTable';
 import { LoadingSpinner, ProgressBar } from '@/components/LoadingComponents';
 import { showToast } from '@/lib/toast';
+import ClassificationAPI from '@/lib/classificationAPI';
+import anomalyAPI from '@/lib/anomalyAPI';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { 
-  PieChart, 
-  Pie, 
-  Cell, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ScatterChart, 
-  Scatter, 
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ScatterChart,
+  Scatter,
   ResponsiveContainer,
   LineChart,
   Line,
@@ -30,14 +32,14 @@ import {
 } from 'recharts';
 import Plot from 'react-plotly.js';
 import html2canvas from 'html2canvas';
-import { 
-  Download, 
-  Eye, 
-  EyeOff, 
-  AlertTriangle, 
-  Search, 
-  Check, 
-  Clock, 
+import {
+  Download,
+  Eye,
+  EyeOff,
+  AlertTriangle,
+  Search,
+  Check,
+  Clock,
   Filter,
   Maximize,
   Maximize2,
@@ -145,7 +147,12 @@ const severityConfig = {
 };
 
 const ResultsDashboard = () => {
-  const [visibleTypes, setVisibleTypes] = useState<{[key: string]: boolean}>({
+  // State for data loading
+  const [isLoading, setIsLoading] = useState(true);
+  const [eventData, setEventData] = useState<EventData[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const [visibleTypes, setVisibleTypes] = useState<{ [key: string]: boolean }>({
     'Background': true,
     'WIMP': true,
     'Axion': true,
@@ -154,24 +161,93 @@ const ResultsDashboard = () => {
 
   const [severityFilter, setSeverityFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('score');
-  const [anomalyStatuses, setAnomalyStatuses] = useState<{[key: string]: string}>(
-    mockAnomalies.reduce((acc, anomaly) => ({ ...acc, [anomaly.id]: anomaly.status }), {})
-  );
+  const [anomalyStatuses, setAnomalyStatuses] = useState<{ [key: string]: string }>({});
 
   // New state for enhanced visualizations
   const [plot3DMode, setPlot3DMode] = useState<'3d' | 'xy' | 'xz' | 'yz'>('3d');
   const [timelineRange, setTimelineRange] = useState<[number, number]>([0, 100]);
   const [fullScreenChart, setFullScreenChart] = useState<string | null>(null);
-  const chartRefs = useRef<{[key: string]: HTMLDivElement | null}>({});
+  const chartRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Fetch real data from backend on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      console.log('🔄 Fetching dashboard data...');
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // First check if backend is available
+        const backendAvailable = await ClassificationAPI.isBackendAvailable();
+        if (!backendAvailable) {
+          throw new Error('Backend server is not responding. Please start the backend with: python webapp_backend.py');
+        }
+
+        // Load dataset
+        console.log('📊 Loading dataset...');
+        const datasetResult = await ClassificationAPI.loadDataset();
+
+        if (!datasetResult.success || !datasetResult.dataset) {
+          throw new Error(datasetResult.error || 'Failed to load dataset');
+        }
+
+        const dataset = datasetResult.dataset;
+        console.log(`✅ Loaded ${dataset.totalEvents} events from dataset`);
+
+        // Transform dataset preview to EventData format
+        const transformedEvents: EventData[] = (dataset.preview || []).map((event: Record<string, unknown>, index: number) => ({
+          id: event.event_id as string || `EVT-${String(index + 1).padStart(3, '0')}`,
+          energy: Number(event.recoil_energy_keV || event.energy || 0),
+          s1: Number(event.s1_area_PE || event.s1 || 0),
+          s2: Number(event.s2_area_PE || event.s2 || 0),
+          s2s1Ratio: Number(event.s2_over_s1_ratio || ((event.s2 as number || 0) / (event.s1 as number || 1)) || 0),
+          type: (event.label as string || event.type as string || event.classification as string || 'Unknown'),
+          confidence: Math.round((Number(event.confidence) || 0.85) * 100),
+          timestamp: event.timestamp as string || new Date().toISOString()
+        }));
+
+        console.log(`✅ Transformed ${transformedEvents.length} events for display`);
+        setEventData(transformedEvents);
+
+        // Analyze for anomalies (optional, can be done in background)
+        console.log('🔍 Analyzing for anomalies...');
+        const anomalyResult = await anomalyAPI.analyzeDataset({
+          max_events: 50,
+          use_claude: false, // Set to false for faster initial load
+          threshold: 0.5
+        });
+
+        if (anomalyResult.success) {
+          console.log(`✅ Found ${anomalyResult.statistics.anomalies_detected} anomalies`);
+        }
+
+        showToast.success(`Loaded ${transformedEvents.length} events successfully`);
+      } catch (err) {
+        console.error('❌ Error loading dashboard data:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
+        setError(errorMessage);
+        showToast.error(errorMessage);
+        // Fallback to empty data
+        setEventData([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Use real data if available, otherwise empty array
+  const mockEventData = eventData;
 
   // Utility functions for chart downloads
   const downloadChart = useCallback(async (chartId: string, filename: string) => {
     const element = chartRefs.current[chartId];
     if (element) {
       try {
-        const canvas = await html2canvas(element, { 
+        const canvas = await html2canvas(element, {
           backgroundColor: '#0f172a',
-          scale: 2 
+          scale: 2
         });
         const link = document.createElement('a');
         link.download = `${filename}-${new Date().toISOString().split('T')[0]}.png`;
@@ -193,7 +269,7 @@ const ResultsDashboard = () => {
     mockEventData.reduce((acc, event) => {
       acc[event.type] = (acc[event.type] || 0) + 1;
       return acc;
-    }, {} as {[key: string]: number})
+    }, {} as { [key: string]: number })
   ).map(([name, value]) => ({ name, value, fill: classificationColors[name as keyof typeof classificationColors] }));
 
   const averageConfidence = Math.round(
@@ -222,18 +298,18 @@ const ResultsDashboard = () => {
 
   // Confidence distribution data
   const confidenceDistribution = [
-    { 
-      range: 'High (>80%)', 
+    {
+      range: 'High (>80%)',
       count: mockEventData.filter(e => e.confidence > 80).length,
       fill: '#10b981'
     },
-    { 
-      range: 'Medium (50-80%)', 
+    {
+      range: 'Medium (50-80%)',
       count: mockEventData.filter(e => e.confidence >= 50 && e.confidence <= 80).length,
       fill: '#f59e0b'
     },
-    { 
-      range: 'Low (<50%)', 
+    {
+      range: 'Low (<50%)',
       count: mockEventData.filter(e => e.confidence < 50).length,
       fill: '#ef4444'
     },
@@ -285,7 +361,7 @@ const ResultsDashboard = () => {
     // TODO: Export to CSV/JSON
   };
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: EventData }>; label?: string }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (
@@ -294,7 +370,7 @@ const ResultsDashboard = () => {
           <div className="space-y-1">
             <p className="text-xs text-slate-300">Energy: <span className="text-cyan-400 font-mono">{data.energy} keV</span></p>
             <p className="text-xs text-slate-300">S2/S1 Ratio: <span className="text-cyan-400 font-mono">{data.s2s1Ratio}</span></p>
-            <p className="text-xs text-slate-300">Classification: <span className="text-white font-medium">{data.classification}</span></p>
+            <p className="text-xs text-slate-300">Classification: <span className="text-white font-medium">{data.type}</span></p>
             <p className="text-xs text-slate-300">Confidence: <span className="text-green-400 font-mono">{data.confidence}%</span></p>
           </div>
         </div>
@@ -308,1360 +384,1383 @@ const ResultsDashboard = () => {
       title="Results Dashboard"
       description="Visualize and analyze detection data with interactive insights"
     >
-      {/* Top Section - Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-              Total Events Processed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="stat-number text-5xl mb-3">{totalEvents.toLocaleString()}</div>
-            <div className="text-sm text-cyan-400 font-medium">+12% from last week</div>
-          </CardContent>
-        </Card>
-
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-              Classification Breakdown
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="w-20 h-20">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={classificationBreakdown}
-                      dataKey="value"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={18}
-                      outerRadius={38}
-                      strokeWidth={0}
-                    >
-                      {classificationBreakdown.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="text-sm space-y-2">
-                {classificationBreakdown.slice(0, 2).map((item, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: item.fill }}
-                    />
-                    <span className="text-xs text-slate-300">{item.name}: {item.value}</span>
-                  </div>
-                ))}
-                {classificationBreakdown.length > 2 && (
-                  <div className="text-xs text-slate-500">+{classificationBreakdown.length - 2} more</div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="stat-card">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-xs font-medium text-slate-400 uppercase tracking-wide">
-              Average Confidence Score
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="stat-number text-5xl mb-3">{averageConfidence}%</div>
-            <div className="text-sm text-cyan-400 font-medium">+2.1% from last week</div>
-          </CardContent>
-        </Card>
-
-        <Card className={`stat-card ${anomalies > 0 ? 'border-red-500/50 bg-red-500/5' : ''}`}>
-          <CardHeader className="pb-2">
-            <CardDescription className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wide">
-              Anomalies Detected
-              {anomalies > 0 && <AlertTriangle className="w-4 h-4 text-red-400" />}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className={`text-5xl mb-3 font-bold ${anomalies > 0 ? 'text-red-400' : ''} ${anomalies === 0 ? 'stat-number' : ''}`}>
-              {anomalies}
-            </div>
-            <div className="text-sm text-slate-400">Low confidence events</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Middle Section - Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Left: Pie Chart */}
-        <Card className="chart-card relative overflow-hidden">
-          {/* Animated background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-cyan-900/20 animate-pulse"></div>
-          <CardHeader className="flex flex-row items-center justify-between relative z-10">
-            <div>
-              <CardTitle className="section-heading">
-                <BarChart3 className="icon animate-pulse" />
-                Classification Distribution
-              </CardTitle>
-              <CardDescription className="text-slate-400">Breakdown by particle type</CardDescription>
-            </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => exportChart('classification-distribution')}
-              className="border-slate-600 hover:bg-slate-700 hover:border-cyan-400 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/20"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="h-80 relative">
-              {/* Glow effect behind chart */}
-              <div className="absolute inset-0 bg-gradient-radial from-cyan-500/10 via-transparent to-transparent animate-pulse"></div>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <defs>
-                    <filter id="glow">
-                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                      <feMerge> 
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                    <linearGradient id="wimpGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#3b82f6" />
-                      <stop offset="100%" stopColor="#1d4ed8" />
-                    </linearGradient>
-                    <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#10b981" />
-                      <stop offset="100%" stopColor="#047857" />
-                    </linearGradient>
-                    <linearGradient id="axionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#8b5cf6" />
-                      <stop offset="100%" stopColor="#6d28d9" />
-                    </linearGradient>
-                    <linearGradient id="neutrinoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#f59e0b" />
-                      <stop offset="100%" stopColor="#d97706" />
-                    </linearGradient>
-                    <linearGradient id="anomalyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#ef4444" />
-                      <stop offset="100%" stopColor="#dc2626" />
-                    </linearGradient>
-                  </defs>
-                  <Pie
-                    data={classificationBreakdown}
-                    dataKey="value"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={110}
-                    innerRadius={40}
-                    strokeWidth={3}
-                    stroke="rgba(255,255,255,0.2)"
-                    filter="url(#glow)"
-                    animationBegin={0}
-                    animationDuration={1500}
-                  >
-                    {classificationBreakdown.map((entry, index) => {
-                      const gradientMap = {
-                        'WIMP': 'url(#wimpGradient)',
-                        'Background': 'url(#backgroundGradient)', 
-                        'Axion': 'url(#axionGradient)',
-                        'Neutrino': 'url(#neutrinoGradient)',
-                        'Anomaly': 'url(#anomalyGradient)'
-                      };
-                      return (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={gradientMap[entry.name as keyof typeof gradientMap] || entry.fill}
-                        />
-                      );
-                    })}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                      border: '1px solid #334155',
-                      borderRadius: '12px',
-                      color: 'white',
-                      fontSize: '13px',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 211, 238, 0.2)',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                    formatter={(value, name) => [
-                      <span style={{color: '#22d3ee', fontWeight: 'bold'}}>{value}</span>,
-                      <span style={{color: '#cbd5e1'}}>{name}</span>
-                    ]}
-                  />
-                  <Legend 
-                    wrapperStyle={{
-                      color: '#cbd5e1',
-                      fontSize: '13px',
-                      fontWeight: '500'
-                    }}
-                    iconType="circle"
-                    formatter={(value) => (
-                      <span className="text-slate-300 font-medium">{value}</span>
-                    )}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-              
-              {/* Floating particles effect */}
-              <div className="absolute top-4 left-4 w-2 h-2 bg-cyan-400 rounded-full animate-ping"></div>
-              <div className="absolute top-8 right-8 w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
-              <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{animationDelay: '1s'}}></div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Right: Bar Chart */}
-        <Card className="chart-card relative overflow-hidden">
-          {/* Animated background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-bl from-green-900/20 via-orange-900/20 to-red-900/20 animate-pulse"></div>
-          <CardHeader className="flex flex-row items-center justify-between relative z-10">
-            <div>
-              <CardTitle className="section-heading">
-                <BarChart3 className="icon animate-pulse" />
-                Confidence Score Distribution
-              </CardTitle>
-              <CardDescription className="text-slate-400">Events by confidence level</CardDescription>
-            </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => exportChart('confidence-distribution')}
-              className="border-slate-600 hover:bg-slate-700 hover:border-green-400 transition-all duration-300 hover:shadow-lg hover:shadow-green-400/20"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="h-80 relative">
-              {/* Glow effect behind chart */}
-              <div className="absolute inset-0 bg-gradient-radial from-green-500/10 via-transparent to-transparent animate-pulse"></div>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={confidenceDistribution}>
-                  <defs>
-                    <filter id="barGlow">
-                      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                      <feMerge> 
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                      </feMerge>
-                    </filter>
-                    <linearGradient id="highConfidence" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#22d3ee" />
-                      <stop offset="50%" stopColor="#10b981" />
-                      <stop offset="100%" stopColor="#047857" />
-                    </linearGradient>
-                    <linearGradient id="mediumConfidence" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#fbbf24" />
-                      <stop offset="50%" stopColor="#f59e0b" />
-                      <stop offset="100%" stopColor="#d97706" />
-                    </linearGradient>
-                    <linearGradient id="lowConfidence" x1="0%" y1="0%" x2="0%" y2="100%">
-                      <stop offset="0%" stopColor="#f87171" />
-                      <stop offset="50%" stopColor="#ef4444" />
-                      <stop offset="100%" stopColor="#dc2626" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid 
-                    strokeDasharray="3 3" 
-                    stroke="rgba(51, 65, 85, 0.3)" 
-                    strokeWidth={1}
-                  />
-                  <XAxis 
-                    dataKey="range" 
-                    stroke="#94a3b8"
-                    fontSize={12}
-                    fontWeight={500}
-                    tick={{fill: '#cbd5e1'}}
-                  />
-                  <YAxis 
-                    stroke="#94a3b8"
-                    fontSize={12}
-                    fontWeight={500}
-                    tick={{fill: '#cbd5e1'}}
-                  />
-                  <Tooltip 
-                    contentStyle={{
-                      backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                      border: '1px solid #334155',
-                      borderRadius: '12px',
-                      color: 'white',
-                      fontSize: '13px',
-                      boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 211, 238, 0.2)',
-                      backdropFilter: 'blur(10px)'
-                    }}
-                    formatter={(value, name) => [
-                      <span style={{color: '#22d3ee', fontWeight: 'bold'}}>{value} events</span>,
-                      <span style={{color: '#cbd5e1'}}>Count</span>
-                    ]}
-                    labelFormatter={(label) => (
-                      <span style={{color: '#ffffff', fontWeight: 'bold'}}>{label}</span>
-                    )}
-                  />
-                  <Bar 
-                    dataKey="count" 
-                    radius={[6, 6, 0, 0]}
-                    stroke="rgba(255,255,255,0.3)"
-                    strokeWidth={2}
-                    filter="url(#barGlow)"
-                    animationBegin={0}
-                    animationDuration={1500}
-                  >
-                    {confidenceDistribution.map((entry, index) => {
-                      const gradients = [
-                        'url(#highConfidence)',
-                        'url(#mediumConfidence)', 
-                        'url(#lowConfidence)'
-                      ];
-                      return (
-                        <Cell 
-                          key={`cell-${index}`} 
-                          fill={gradients[index] || entry.fill}
-                        />
-                      );
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-
-              {/* Floating particles effect */}
-              <div className="absolute top-6 right-6 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
-              <div className="absolute top-12 left-12 w-1 h-1 bg-yellow-400 rounded-full animate-pulse" style={{animationDelay: '0.5s'}}></div>
-              <div className="absolute bottom-8 right-12 w-1.5 h-1.5 bg-red-400 rounded-full animate-bounce" style={{animationDelay: '1.5s'}}></div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Bottom Section - Interactive Scatter Plot */}
-      <Card className="chart-card relative overflow-hidden">
-        {/* Animated background gradient */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-violet-900/20 via-indigo-900/20 to-blue-900/20 animate-pulse" style={{animationDuration: '4s'}}></div>
-        <CardHeader className="flex flex-row items-center justify-between relative z-10">
-          <div>
-            <CardTitle className="section-heading">
-              <Star className="icon animate-spin" style={{animationDuration: '8s'}} />
-              Energy vs S2/S1 Ratio Analysis
-            </CardTitle>
-            <CardDescription className="text-slate-400">Interactive scatter plot with particle type filtering</CardDescription>
-          </div>
-          <Button 
-            size="sm" 
-            variant="outline" 
-            onClick={() => exportChart('scatter-plot')}
-            className="border-slate-600 hover:bg-slate-700 hover:border-violet-400 transition-all duration-300 hover:shadow-lg hover:shadow-violet-400/20"
-          >
-            <Download className="w-4 h-4" />
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-slate-400">Loading dataset and analyzing events...</p>
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <AlertTriangle className="w-16 h-16 text-red-400" />
+          <p className="text-red-400 text-lg font-semibold">Error Loading Data</p>
+          <p className="text-slate-400 text-center max-w-md">{error}</p>
+          <Button onClick={() => window.location.reload()} className="mt-4">
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Retry
           </Button>
-        </CardHeader>
-        <CardContent className="relative z-10">
-          {/* Filter toggles */}
-          <div className="flex flex-wrap gap-3 mb-6">
-            {Object.entries(classificationColors).map(([type, color]) => (
-              <Button
-                key={type}
-                size="sm"
-                variant={visibleTypes[type] ? "default" : "outline"}
-                onClick={() => toggleType(type)}
-                className={`filter-badge flex items-center gap-2 transition-all duration-200 ${
-                  visibleTypes[type] 
-                    ? 'active shadow-lg' 
-                    : 'inactive border-slate-600 hover:bg-slate-700'
-                }`}
-                style={visibleTypes[type] ? { 
-                  backgroundColor: color,
-                  borderColor: color,
-                  boxShadow: `0 2px 8px ${color}40`
-                } : {}}
-              >
-                {visibleTypes[type] ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                {type}
-              </Button>
-            ))}
-          </div>
-          
-          <div className="h-96 relative">
-            {/* Glow effect behind chart */}
-            <div className="absolute inset-0 bg-gradient-radial from-violet-500/10 via-blue-500/10 to-transparent animate-pulse" style={{animationDuration: '3s'}}></div>
-            <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart
-                data={scatterData}
-                margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-              >
-                <defs>
-                  <filter id="interactiveGlow">
-                    <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                    <feMerge> 
-                      <feMergeNode in="coloredBlur"/>
-                      <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                  </filter>
-                  {Object.entries(classificationColors).map(([type, color]) => (
-                    <radialGradient key={type} id={`gradient-${type}`} cx="50%" cy="50%" r="50%">
-                      <stop offset="0%" stopColor={color} stopOpacity={1} />
-                      <stop offset="70%" stopColor={color} stopOpacity={0.8} />
-                      <stop offset="100%" stopColor={color} stopOpacity={0.6} />
-                    </radialGradient>
-                  ))}
-                </defs>
-                <CartesianGrid 
-                  strokeDasharray="3 3" 
-                  stroke="rgba(51, 65, 85, 0.3)" 
-                  strokeWidth={1}
-                />
-                <XAxis 
-                  type="number" 
-                  dataKey="energy" 
-                  name="Energy (keV)"
-                  stroke="#94a3b8"
-                  fontSize={12}
-                  fontWeight={500}
-                  tick={{fill: '#cbd5e1'}}
-                />
-                <YAxis 
-                  type="number" 
-                  dataKey="s2s1Ratio" 
-                  name="S2/S1 Ratio"
-                  stroke="#94a3b8"
-                  fontSize={12}
-                  fontWeight={500}
-                  tick={{fill: '#cbd5e1'}}
-                />
-                <Tooltip content={<CustomTooltip />} />
-                <Legend 
-                  wrapperStyle={{
-                    color: '#cbd5e1',
-                    fontSize: '13px',
-                    fontWeight: '500'
-                  }}
-                />
-                {Object.entries(classificationColors).map(([type, color]) => (
-                  <Scatter
-                    key={type}
-                    name={type}
-                    data={scatterData.filter(d => d.classification === type)}
-                    fill={`url(#gradient-${type})`}
-                    strokeWidth={2}
-                    stroke="rgba(255,255,255,0.4)"
-                    r={8}
-                    filter="url(#interactiveGlow)"
-                    animationBegin={Object.keys(classificationColors).indexOf(type) * 200}
-                    animationDuration={2000}
-                  />
-                ))}
-              </ScatterChart>
-            </ResponsiveContainer>
+        </div>
+      ) : mockEventData.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+          <AlertTriangle className="w-16 h-16 text-yellow-400" />
+          <p className="text-yellow-400 text-lg font-semibold">No Data Available</p>
+          <p className="text-slate-400 text-center max-w-md">
+            No events found in the dataset. Please check if the dataset file exists.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Top Section - Overview Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <Card className="stat-card">
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                  Total Events Processed
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="stat-number text-5xl mb-3">{totalEvents.toLocaleString()}</div>
+                <div className="text-sm text-cyan-400 font-medium">+12% from last week</div>
+              </CardContent>
+            </Card>
 
-            {/* Floating particles effect */}
-            <div className="absolute top-8 right-12 w-2 h-2 bg-violet-400 rounded-full animate-ping"></div>
-            <div className="absolute top-20 left-16 w-1 h-1 bg-indigo-400 rounded-full animate-pulse" style={{animationDelay: '1.2s'}}></div>
-            <div className="absolute bottom-16 right-8 w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '2.1s'}}></div>
-            <div className="absolute bottom-8 left-12 w-1 h-1 bg-purple-400 rounded-full animate-ping" style={{animationDelay: '0.8s'}}></div>
-            <div className="absolute top-1/2 right-4 w-1 h-1 bg-cyan-400 rounded-full animate-pulse" style={{animationDelay: '1.8s'}}></div>
-          </div>
-        </CardContent>
-      </Card>
+            <Card className="stat-card">
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                  Classification Breakdown
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={classificationBreakdown}
+                          dataKey="value"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={18}
+                          outerRadius={38}
+                          strokeWidth={0}
+                        >
+                          {classificationBreakdown.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="text-sm space-y-2">
+                    {classificationBreakdown.slice(0, 2).map((item, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: item.fill }}
+                        />
+                        <span className="text-xs text-slate-300">{item.name}: {item.value}</span>
+                      </div>
+                    ))}
+                    {classificationBreakdown.length > 2 && (
+                      <div className="text-xs text-slate-500">+{classificationBreakdown.length - 2} more</div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-      {/* Anomaly Hub Section */}
-      <div className="mt-8">
-        <Card className="chart-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+            <Card className="stat-card">
+              <CardHeader className="pb-2">
+                <CardDescription className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+                  Average Confidence Score
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="stat-number text-5xl mb-3">{averageConfidence}%</div>
+                <div className="text-sm text-cyan-400 font-medium">+2.1% from last week</div>
+              </CardContent>
+            </Card>
+
+            <Card className={`stat-card ${anomalies > 0 ? 'border-red-500/50 bg-red-500/5' : ''}`}>
+              <CardHeader className="pb-2">
+                <CardDescription className="flex items-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wide">
+                  Anomalies Detected
+                  {anomalies > 0 && <AlertTriangle className="w-4 h-4 text-red-400" />}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-5xl mb-3 font-bold ${anomalies > 0 ? 'text-red-400' : ''} ${anomalies === 0 ? 'stat-number' : ''}`}>
+                  {anomalies}
+                </div>
+                <div className="text-sm text-slate-400">Low confidence events</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Middle Section - Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Left: Pie Chart */}
+            <Card className="chart-card relative overflow-hidden">
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-purple-900/20 to-cyan-900/20 animate-pulse"></div>
+              <CardHeader className="flex flex-row items-center justify-between relative z-10">
+                <div>
+                  <CardTitle className="section-heading">
+                    <BarChart3 className="icon animate-pulse" />
+                    Classification Distribution
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">Breakdown by particle type</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportChart('classification-distribution')}
+                  className="border-slate-600 hover:bg-slate-700 hover:border-cyan-400 transition-all duration-300 hover:shadow-lg hover:shadow-cyan-400/20"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="h-80 relative">
+                  {/* Glow effect behind chart */}
+                  <div className="absolute inset-0 bg-gradient-radial from-cyan-500/10 via-transparent to-transparent animate-pulse"></div>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <defs>
+                        <filter id="glow">
+                          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                          <feMerge>
+                            <feMergeNode in="coloredBlur" />
+                            <feMergeNode in="SourceGraphic" />
+                          </feMerge>
+                        </filter>
+                        <linearGradient id="wimpGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#3b82f6" />
+                          <stop offset="100%" stopColor="#1d4ed8" />
+                        </linearGradient>
+                        <linearGradient id="backgroundGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#10b981" />
+                          <stop offset="100%" stopColor="#047857" />
+                        </linearGradient>
+                        <linearGradient id="axionGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#8b5cf6" />
+                          <stop offset="100%" stopColor="#6d28d9" />
+                        </linearGradient>
+                        <linearGradient id="neutrinoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#d97706" />
+                        </linearGradient>
+                        <linearGradient id="anomalyGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#ef4444" />
+                          <stop offset="100%" stopColor="#dc2626" />
+                        </linearGradient>
+                      </defs>
+                      <Pie
+                        data={classificationBreakdown}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={110}
+                        innerRadius={40}
+                        strokeWidth={3}
+                        stroke="rgba(255,255,255,0.2)"
+                        filter="url(#glow)"
+                        animationBegin={0}
+                        animationDuration={1500}
+                      >
+                        {classificationBreakdown.map((entry, index) => {
+                          const gradientMap = {
+                            'WIMP': 'url(#wimpGradient)',
+                            'Background': 'url(#backgroundGradient)',
+                            'Axion': 'url(#axionGradient)',
+                            'Neutrino': 'url(#neutrinoGradient)',
+                            'Anomaly': 'url(#anomalyGradient)'
+                          };
+                          return (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={gradientMap[entry.name as keyof typeof gradientMap] || entry.fill}
+                            />
+                          );
+                        })}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                          border: '1px solid #334155',
+                          borderRadius: '12px',
+                          color: 'white',
+                          fontSize: '13px',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 211, 238, 0.2)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        formatter={(value, name) => [
+                          <span style={{ color: '#22d3ee', fontWeight: 'bold' }}>{value}</span>,
+                          <span style={{ color: '#cbd5e1' }}>{name}</span>
+                        ]}
+                      />
+                      <Legend
+                        wrapperStyle={{
+                          color: '#cbd5e1',
+                          fontSize: '13px',
+                          fontWeight: '500'
+                        }}
+                        iconType="circle"
+                        formatter={(value) => (
+                          <span className="text-slate-300 font-medium">{value}</span>
+                        )}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+
+                  {/* Floating particles effect */}
+                  <div className="absolute top-4 left-4 w-2 h-2 bg-cyan-400 rounded-full animate-ping"></div>
+                  <div className="absolute top-8 right-8 w-1 h-1 bg-blue-400 rounded-full animate-pulse"></div>
+                  <div className="absolute bottom-6 left-8 w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: '1s' }}></div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Right: Bar Chart */}
+            <Card className="chart-card relative overflow-hidden">
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-bl from-green-900/20 via-orange-900/20 to-red-900/20 animate-pulse"></div>
+              <CardHeader className="flex flex-row items-center justify-between relative z-10">
+                <div>
+                  <CardTitle className="section-heading">
+                    <BarChart3 className="icon animate-pulse" />
+                    Confidence Score Distribution
+                  </CardTitle>
+                  <CardDescription className="text-slate-400">Events by confidence level</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportChart('confidence-distribution')}
+                  className="border-slate-600 hover:bg-slate-700 hover:border-green-400 transition-all duration-300 hover:shadow-lg hover:shadow-green-400/20"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="h-80 relative">
+                  {/* Glow effect behind chart */}
+                  <div className="absolute inset-0 bg-gradient-radial from-green-500/10 via-transparent to-transparent animate-pulse"></div>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={confidenceDistribution}>
+                      <defs>
+                        <filter id="barGlow">
+                          <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                          <feMerge>
+                            <feMergeNode in="coloredBlur" />
+                            <feMergeNode in="SourceGraphic" />
+                          </feMerge>
+                        </filter>
+                        <linearGradient id="highConfidence" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#22d3ee" />
+                          <stop offset="50%" stopColor="#10b981" />
+                          <stop offset="100%" stopColor="#047857" />
+                        </linearGradient>
+                        <linearGradient id="mediumConfidence" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#fbbf24" />
+                          <stop offset="50%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#d97706" />
+                        </linearGradient>
+                        <linearGradient id="lowConfidence" x1="0%" y1="0%" x2="0%" y2="100%">
+                          <stop offset="0%" stopColor="#f87171" />
+                          <stop offset="50%" stopColor="#ef4444" />
+                          <stop offset="100%" stopColor="#dc2626" />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="rgba(51, 65, 85, 0.3)"
+                        strokeWidth={1}
+                      />
+                      <XAxis
+                        dataKey="range"
+                        stroke="#94a3b8"
+                        fontSize={12}
+                        fontWeight={500}
+                        tick={{ fill: '#cbd5e1' }}
+                      />
+                      <YAxis
+                        stroke="#94a3b8"
+                        fontSize={12}
+                        fontWeight={500}
+                        tick={{ fill: '#cbd5e1' }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                          border: '1px solid #334155',
+                          borderRadius: '12px',
+                          color: 'white',
+                          fontSize: '13px',
+                          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 211, 238, 0.2)',
+                          backdropFilter: 'blur(10px)'
+                        }}
+                        formatter={(value, name) => [
+                          <span style={{ color: '#22d3ee', fontWeight: 'bold' }}>{value} events</span>,
+                          <span style={{ color: '#cbd5e1' }}>Count</span>
+                        ]}
+                        labelFormatter={(label) => (
+                          <span style={{ color: '#ffffff', fontWeight: 'bold' }}>{label}</span>
+                        )}
+                      />
+                      <Bar
+                        dataKey="count"
+                        radius={[6, 6, 0, 0]}
+                        stroke="rgba(255,255,255,0.3)"
+                        strokeWidth={2}
+                        filter="url(#barGlow)"
+                        animationBegin={0}
+                        animationDuration={1500}
+                      >
+                        {confidenceDistribution.map((entry, index) => {
+                          const gradients = [
+                            'url(#highConfidence)',
+                            'url(#mediumConfidence)',
+                            'url(#lowConfidence)'
+                          ];
+                          return (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={gradients[index] || entry.fill}
+                            />
+                          );
+                        })}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+
+                  {/* Floating particles effect */}
+                  <div className="absolute top-6 right-6 w-2 h-2 bg-green-400 rounded-full animate-ping"></div>
+                  <div className="absolute top-12 left-12 w-1 h-1 bg-yellow-400 rounded-full animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                  <div className="absolute bottom-8 right-12 w-1.5 h-1.5 bg-red-400 rounded-full animate-bounce" style={{ animationDelay: '1.5s' }}></div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Bottom Section - Interactive Scatter Plot */}
+          <Card className="chart-card relative overflow-hidden">
+            {/* Animated background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-violet-900/20 via-indigo-900/20 to-blue-900/20 animate-pulse" style={{ animationDuration: '4s' }}></div>
+            <CardHeader className="flex flex-row items-center justify-between relative z-10">
               <div>
                 <CardTitle className="section-heading">
-                  <AlertTriangle className="icon text-yellow-400" />
-                  Anomaly Hub
+                  <Star className="icon animate-spin" style={{ animationDuration: '8s' }} />
+                  Energy vs S2/S1 Ratio Analysis
                 </CardTitle>
-                <CardDescription className="text-slate-400">Detected anomalies requiring investigation</CardDescription>
+                <CardDescription className="text-slate-400">Interactive scatter plot with particle type filtering</CardDescription>
               </div>
-              <Badge className="badge-danger">
-                <AlertTriangle className="w-3 h-3" />
-                {openAnomalies} anomalies detected in last batch
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {/* Filters */}
-            <div className="flex gap-4 mb-6">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-slate-400" />
-                <span className="text-sm text-slate-400">Filter by severity:</span>
-                <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                  <SelectTrigger className="w-32 border-slate-600 bg-slate-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-600">
-                    <SelectItem value="all">All</SelectItem>
-                    <SelectItem value="Critical">Critical</SelectItem>
-                    <SelectItem value="Moderate">Moderate</SelectItem>
-                    <SelectItem value="Minor">Minor</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-slate-400">Sort by:</span>
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-40 border-slate-600 bg-slate-800">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-600">
-                    <SelectItem value="score">Anomaly Score</SelectItem>
-                    <SelectItem value="eventId">Event ID</SelectItem>
-                    <SelectItem value="time">Detection Time</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Anomaly Accordion */}
-            <Accordion type="single" collapsible className="space-y-3">
-              {filteredAnomalies.map((anomaly) => {
-                const config = severityConfig[anomaly.severity as keyof typeof severityConfig];
-                const status = anomalyStatuses[anomaly.id];
-                const scoreLevel = anomaly.score > 0.85 ? 'high' : anomaly.score > 0.7 ? 'medium' : 'low';
-                
-                return (
-                  <AccordionItem key={anomaly.id} value={anomaly.id} className="border-none">
-                    <Card className={`chart-card ${config.border} border-l-4`}>
-                      <AccordionTrigger className="hover:no-underline p-0">
-                        <CardHeader className="w-full">
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-3">
-                              <span className="text-lg">{config.emoji}</span>
-                              <div className="text-left">
-                                <div className="flex items-center gap-2">
-                                  <span className="font-semibold text-white">{anomaly.eventId}</span>
-                                  <Badge className={`badge-outline-premium ${config.textColor} border-current`}>
-                                    {anomaly.severity}
-                                  </Badge>
-                                  {status !== 'open' && (
-                                    <Badge className="badge-premium text-xs">
-                                      {status === 'investigating' ? 'Investigating' : 'Known'}
-                                    </Badge>
-                                  )}
-                                </div>
-                                <div className="text-sm text-slate-400">
-                                  Anomaly Score: {anomaly.score.toFixed(2)} | 
-                                  Energy: {anomaly.energy} keV | 
-                                  S2/S1: {anomaly.s2s1Ratio}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className={`text-lg font-bold anomaly-score-badge ${scoreLevel}`}>
-                                {anomaly.score.toFixed(2)}
-                              </div>
-                              <div className="text-xs text-slate-400 mt-1">
-                                {new Date(anomaly.detectionTime).toLocaleTimeString()}
-                              </div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                      </AccordionTrigger>
-                      
-                      <AccordionContent>
-                        <CardContent className="pt-0">
-                          <div className="space-y-4">
-                            {/* Quick Stats */}
-                            <div className="grid grid-cols-3 gap-4 p-3 bg-slate-800/30 rounded-lg">
-                              <div>
-                                <div className="text-xs text-slate-400 mb-1">Energy</div>
-                                <div className="font-semibold text-white">{anomaly.energy} keV</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-slate-400 mb-1">S2/S1 Ratio</div>
-                                <div className="font-semibold text-white">{anomaly.s2s1Ratio}</div>
-                              </div>
-                              <div>
-                                <div className="text-xs text-slate-400 mb-1">Detection Time</div>
-                                <div className="font-semibold text-xs text-white">
-                                  {new Date(anomaly.detectionTime).toLocaleString()}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Unusual Features */}
-                            <div>
-                              <div className="text-sm font-semibold mb-2 text-white">Unusual Features:</div>
-                              <div className="flex flex-wrap gap-2">
-                                {anomaly.features.map((feature, idx) => (
-                                  <Badge key={idx} className="badge-outline-premium text-xs border-slate-500 text-slate-300">
-                                    {feature}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-
-                            {/* Claude's Hypothesis */}
-                            <div>
-                              <div className="text-sm font-semibold mb-2 text-white">Claude's Hypothesis:</div>
-                              <div className="text-sm text-slate-300 italic bg-slate-800/30 p-3 rounded-lg">
-                                "{anomaly.hypothesis}"
-                              </div>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex gap-2 pt-2">
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => handleAnomalyAction(anomaly.id, 'investigate')}
-                                disabled={status !== 'open'}
-                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
-                              >
-                                <Search className="w-3 h-3" />
-                                {status === 'investigating' ? 'Investigating...' : 'Investigate'}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleAnomalyAction(anomaly.id, 'mark-known')}
-                                disabled={status !== 'open'}
-                                className="flag-button"
-                              >
-                                <Check className="w-3 h-3" />
-                                {status === 'known' ? 'Marked as Known' : 'Flag for Review'}
-                              </Button>
-                              {status !== 'open' && (
-                                <div className="flex items-center gap-1 text-xs text-slate-400 ml-auto">
-                                  <Clock className="w-3 h-3" />
-                                  Status updated
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </AccordionContent>
-                    </Card>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
-
-            {filteredAnomalies.length === 0 && (
-              <div className="text-center py-8 text-slate-400">
-                <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No anomalies found matching current filters.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Feature Space Explorer */}
-      <div className="mt-8">
-        <Card className="chart-card">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="section-heading">
-                <Box className="icon" />
-                Feature Space Explorer
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => downloadChart('feature-space', 'feature-space-plot')}
-                  className="border-slate-600 hover:bg-slate-700"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleFullScreen('feature-space')}
-                  className="border-slate-600 hover:bg-slate-700"
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Plot Mode Controls */}
-              <div className="flex gap-2">
-                {(['3d', 'xy', 'xz', 'yz'] as const).map((mode) => (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => exportChart('scatter-plot')}
+                className="border-slate-600 hover:bg-slate-700 hover:border-violet-400 transition-all duration-300 hover:shadow-lg hover:shadow-violet-400/20"
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+            </CardHeader>
+            <CardContent className="relative z-10">
+              {/* Filter toggles */}
+              <div className="flex flex-wrap gap-3 mb-6">
+                {Object.entries(classificationColors).map(([type, color]) => (
                   <Button
-                    key={mode}
-                    variant={plot3DMode === mode ? "default" : "outline"}
+                    key={type}
                     size="sm"
-                    onClick={() => setPlot3DMode(mode)}
-                    className={`transition-all duration-200 ${
-                      plot3DMode === mode 
-                        ? "bg-blue-600 hover:bg-blue-700 shadow-lg" 
-                        : "border-slate-600 hover:bg-slate-700 hover:border-blue-600"
-                    }`}
+                    variant={visibleTypes[type] ? "default" : "outline"}
+                    onClick={() => toggleType(type)}
+                    className={`filter-badge flex items-center gap-2 transition-all duration-200 ${visibleTypes[type]
+                      ? 'active shadow-lg'
+                      : 'inactive border-slate-600 hover:bg-slate-700'
+                      }`}
+                    style={visibleTypes[type] ? {
+                      backgroundColor: color,
+                      borderColor: color,
+                      boxShadow: `0 2px 8px ${color}40`
+                    } : {}}
                   >
-                    {mode.toUpperCase()}
+                    {visibleTypes[type] ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                    {type}
                   </Button>
                 ))}
               </div>
 
-              {/* 3D Scatter Plot */}
-              <div 
-                ref={(el) => chartRefs.current['feature-space'] = el}
-                className={`${
-                  fullScreenChart === 'feature-space' 
-                    ? 'fixed inset-0 z-50 bg-slate-900 p-8' 
-                    : 'h-96'
-                }`}
-              >
-                <Plot
-                  data={[
-                    {
-                      x: mockEventData.map(d => d.energy),
-                      y: mockEventData.map(d => d.s1),
-                      z: plot3DMode === '3d' ? mockEventData.map(d => d.s2) : undefined,
-                      mode: 'markers',
-                      type: plot3DMode === '3d' ? 'scatter3d' : 'scatter',
-                      marker: {
-                        size: 8,
-                        color: mockEventData.map(d => 
-                          d.type === 'WIMP' ? '#3b82f6' : 
-                          d.type === 'Neutrino' ? '#ef4444' : '#10b981'
-                        ),
-                        opacity: 0.8,
-                        line: {
-                          color: '#ffffff',
-                          width: 1
+              <div className="h-96 relative">
+                {/* Glow effect behind chart */}
+                <div className="absolute inset-0 bg-gradient-radial from-violet-500/10 via-blue-500/10 to-transparent animate-pulse" style={{ animationDuration: '3s' }}></div>
+                <ResponsiveContainer width="100%" height="100%">
+                  <ScatterChart
+                    data={scatterData}
+                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                  >
+                    <defs>
+                      <filter id="interactiveGlow">
+                        <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                        <feMerge>
+                          <feMergeNode in="coloredBlur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                      {Object.entries(classificationColors).map(([type, color]) => (
+                        <radialGradient key={type} id={`gradient-${type}`} cx="50%" cy="50%" r="50%">
+                          <stop offset="0%" stopColor={color} stopOpacity={1} />
+                          <stop offset="70%" stopColor={color} stopOpacity={0.8} />
+                          <stop offset="100%" stopColor={color} stopOpacity={0.6} />
+                        </radialGradient>
+                      ))}
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      stroke="rgba(51, 65, 85, 0.3)"
+                      strokeWidth={1}
+                    />
+                    <XAxis
+                      type="number"
+                      dataKey="energy"
+                      name="Energy (keV)"
+                      stroke="#94a3b8"
+                      fontSize={12}
+                      fontWeight={500}
+                      tick={{ fill: '#cbd5e1' }}
+                    />
+                    <YAxis
+                      type="number"
+                      dataKey="s2s1Ratio"
+                      name="S2/S1 Ratio"
+                      stroke="#94a3b8"
+                      fontSize={12}
+                      fontWeight={500}
+                      tick={{ fill: '#cbd5e1' }}
+                    />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend
+                      wrapperStyle={{
+                        color: '#cbd5e1',
+                        fontSize: '13px',
+                        fontWeight: '500'
+                      }}
+                    />
+                    {Object.entries(classificationColors).map(([type, color]) => (
+                      <Scatter
+                        key={type}
+                        name={type}
+                        data={scatterData.filter(d => d.classification === type)}
+                        fill={`url(#gradient-${type})`}
+                        strokeWidth={2}
+                        stroke="rgba(255,255,255,0.4)"
+                        r={8}
+                        filter="url(#interactiveGlow)"
+                        animationBegin={Object.keys(classificationColors).indexOf(type) * 200}
+                        animationDuration={2000}
+                      />
+                    ))}
+                  </ScatterChart>
+                </ResponsiveContainer>
+
+                {/* Floating particles effect */}
+                <div className="absolute top-8 right-12 w-2 h-2 bg-violet-400 rounded-full animate-ping"></div>
+                <div className="absolute top-20 left-16 w-1 h-1 bg-indigo-400 rounded-full animate-pulse" style={{ animationDelay: '1.2s' }}></div>
+                <div className="absolute bottom-16 right-8 w-1.5 h-1.5 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '2.1s' }}></div>
+                <div className="absolute bottom-8 left-12 w-1 h-1 bg-purple-400 rounded-full animate-ping" style={{ animationDelay: '0.8s' }}></div>
+                <div className="absolute top-1/2 right-4 w-1 h-1 bg-cyan-400 rounded-full animate-pulse" style={{ animationDelay: '1.8s' }}></div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Anomaly Hub Section */}
+          <div className="mt-8">
+            <Card className="chart-card">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="section-heading">
+                      <AlertTriangle className="icon text-yellow-400" />
+                      Anomaly Hub
+                    </CardTitle>
+                    <CardDescription className="text-slate-400">Detected anomalies requiring investigation</CardDescription>
+                  </div>
+                  <Badge className="badge-danger">
+                    <AlertTriangle className="w-3 h-3" />
+                    {openAnomalies} anomalies detected in last batch
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Filters */}
+                <div className="flex gap-4 mb-6">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm text-slate-400">Filter by severity:</span>
+                    <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                      <SelectTrigger className="w-32 border-slate-600 bg-slate-800">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="Critical">Critical</SelectItem>
+                        <SelectItem value="Moderate">Moderate</SelectItem>
+                        <SelectItem value="Minor">Minor</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-400">Sort by:</span>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-40 border-slate-600 bg-slate-800">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-slate-800 border-slate-600">
+                        <SelectItem value="score">Anomaly Score</SelectItem>
+                        <SelectItem value="eventId">Event ID</SelectItem>
+                        <SelectItem value="time">Detection Time</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Anomaly Accordion */}
+                <Accordion type="single" collapsible className="space-y-3">
+                  {filteredAnomalies.map((anomaly) => {
+                    const config = severityConfig[anomaly.severity as keyof typeof severityConfig];
+                    const status = anomalyStatuses[anomaly.id];
+                    const scoreLevel = anomaly.score > 0.85 ? 'high' : anomaly.score > 0.7 ? 'medium' : 'low';
+
+                    return (
+                      <AccordionItem key={anomaly.id} value={anomaly.id} className="border-none">
+                        <Card className={`chart-card ${config.border} border-l-4`}>
+                          <AccordionTrigger className="hover:no-underline p-0">
+                            <CardHeader className="w-full">
+                              <div className="flex items-center justify-between w-full">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-lg">{config.emoji}</span>
+                                  <div className="text-left">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-semibold text-white">{anomaly.eventId}</span>
+                                      <Badge className={`badge-outline-premium ${config.textColor} border-current`}>
+                                        {anomaly.severity}
+                                      </Badge>
+                                      {status !== 'open' && (
+                                        <Badge className="badge-premium text-xs">
+                                          {status === 'investigating' ? 'Investigating' : 'Known'}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <div className="text-sm text-slate-400">
+                                      Anomaly Score: {anomaly.score.toFixed(2)} |
+                                      Energy: {anomaly.energy} keV |
+                                      S2/S1: {anomaly.s2s1Ratio}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <div className={`text-lg font-bold anomaly-score-badge ${scoreLevel}`}>
+                                    {anomaly.score.toFixed(2)}
+                                  </div>
+                                  <div className="text-xs text-slate-400 mt-1">
+                                    {new Date(anomaly.detectionTime).toLocaleTimeString()}
+                                  </div>
+                                </div>
+                              </div>
+                            </CardHeader>
+                          </AccordionTrigger>
+
+                          <AccordionContent>
+                            <CardContent className="pt-0">
+                              <div className="space-y-4">
+                                {/* Quick Stats */}
+                                <div className="grid grid-cols-3 gap-4 p-3 bg-slate-800/30 rounded-lg">
+                                  <div>
+                                    <div className="text-xs text-slate-400 mb-1">Energy</div>
+                                    <div className="font-semibold text-white">{anomaly.energy} keV</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs text-slate-400 mb-1">S2/S1 Ratio</div>
+                                    <div className="font-semibold text-white">{anomaly.s2s1Ratio}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-xs text-slate-400 mb-1">Detection Time</div>
+                                    <div className="font-semibold text-xs text-white">
+                                      {new Date(anomaly.detectionTime).toLocaleString()}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Unusual Features */}
+                                <div>
+                                  <div className="text-sm font-semibold mb-2 text-white">Unusual Features:</div>
+                                  <div className="flex flex-wrap gap-2">
+                                    {anomaly.features.map((feature, idx) => (
+                                      <Badge key={idx} className="badge-outline-premium text-xs border-slate-500 text-slate-300">
+                                        {feature}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                {/* Claude's Hypothesis */}
+                                <div>
+                                  <div className="text-sm font-semibold mb-2 text-white">Claude's Hypothesis:</div>
+                                  <div className="text-sm text-slate-300 italic bg-slate-800/30 p-3 rounded-lg">
+                                    "{anomaly.hypothesis}"
+                                  </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-2 pt-2">
+                                  <Button
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => handleAnomalyAction(anomaly.id, 'investigate')}
+                                    disabled={status !== 'open'}
+                                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+                                  >
+                                    <Search className="w-3 h-3" />
+                                    {status === 'investigating' ? 'Investigating...' : 'Investigate'}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => handleAnomalyAction(anomaly.id, 'mark-known')}
+                                    disabled={status !== 'open'}
+                                    className="flag-button"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                    {status === 'known' ? 'Marked as Known' : 'Flag for Review'}
+                                  </Button>
+                                  {status !== 'open' && (
+                                    <div className="flex items-center gap-1 text-xs text-slate-400 ml-auto">
+                                      <Clock className="w-3 h-3" />
+                                      Status updated
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </AccordionContent>
+                        </Card>
+                      </AccordionItem>
+                    );
+                  })}
+                </Accordion>
+
+                {filteredAnomalies.length === 0 && (
+                  <div className="text-center py-8 text-slate-400">
+                    <AlertTriangle className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p>No anomalies found matching current filters.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Feature Space Explorer */}
+          <div className="mt-8">
+            <Card className="chart-card">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="section-heading">
+                    <Box className="icon" />
+                    Feature Space Explorer
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadChart('feature-space', 'feature-space-plot')}
+                      className="border-slate-600 hover:bg-slate-700"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleFullScreen('feature-space')}
+                      className="border-slate-600 hover:bg-slate-700"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Plot Mode Controls */}
+                  <div className="flex gap-2">
+                    {(['3d', 'xy', 'xz', 'yz'] as const).map((mode) => (
+                      <Button
+                        key={mode}
+                        variant={plot3DMode === mode ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setPlot3DMode(mode)}
+                        className={`transition-all duration-200 ${plot3DMode === mode
+                          ? "bg-blue-600 hover:bg-blue-700 shadow-lg"
+                          : "border-slate-600 hover:bg-slate-700 hover:border-blue-600"
+                          }`}
+                      >
+                        {mode.toUpperCase()}
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* 3D Scatter Plot */}
+                  <div
+                    ref={(el) => chartRefs.current['feature-space'] = el}
+                    className={`${fullScreenChart === 'feature-space'
+                      ? 'fixed inset-0 z-50 bg-slate-900 p-8'
+                      : 'h-96'
+                      }`}
+                  >
+                    <Plot
+                      data={[
+                        {
+                          x: mockEventData.map(d => d.energy),
+                          y: mockEventData.map(d => d.s1),
+                          z: plot3DMode === '3d' ? mockEventData.map(d => d.s2) : undefined,
+                          mode: 'markers',
+                          type: plot3DMode === '3d' ? 'scatter3d' : 'scatter',
+                          marker: {
+                            size: 8,
+                            color: mockEventData.map(d =>
+                              d.type === 'WIMP' ? '#3b82f6' :
+                                d.type === 'Neutrino' ? '#ef4444' : '#10b981'
+                            ),
+                            opacity: 0.8,
+                            line: {
+                              color: '#ffffff',
+                              width: 1
+                            }
+                          },
+                          text: mockEventData.map(d =>
+                            `Event ${d.id}<br>Type: ${d.type}<br>Confidence: ${d.confidence}%`
+                          ),
+                          hovertemplate: '%{text}<extra></extra>',
+                          name: 'Events'
                         }
-                      },
-                      text: mockEventData.map(d => 
-                        `Event ${d.id}<br>Type: ${d.type}<br>Confidence: ${d.confidence}%`
-                      ),
-                      hovertemplate: '%{text}<extra></extra>',
-                      name: 'Events'
-                    }
-                  ]}
-                  layout={{
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: { color: '#e2e8f0' },
-                    ...(plot3DMode === '3d' ? {
-                      scene: {
-                        xaxis: { 
-                          title: 'Energy (keV)', 
+                      ]}
+                      layout={{
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent',
+                        font: { color: '#e2e8f0' },
+                        ...(plot3DMode === '3d' ? {
+                          scene: {
+                            xaxis: {
+                              title: 'Energy (keV)',
+                              gridcolor: '#475569',
+                              zerolinecolor: '#64748b'
+                            },
+                            yaxis: {
+                              title: 'S1 Signal',
+                              gridcolor: '#475569',
+                              zerolinecolor: '#64748b'
+                            },
+                            zaxis: {
+                              title: 'S2 Signal',
+                              gridcolor: '#475569',
+                              zerolinecolor: '#64748b'
+                            },
+                            bgcolor: 'transparent',
+                            camera: {
+                              eye: { x: 1.5, y: 1.5, z: 1.5 }
+                            }
+                          }
+                        } : {
+                          xaxis: {
+                            title: plot3DMode.includes('x') ? 'Energy (keV)' : 'S2 Signal',
+                            gridcolor: '#475569',
+                            zerolinecolor: '#64748b'
+                          },
+                          yaxis: {
+                            title: plot3DMode === 'xy' ? 'S1 Signal' : 'S2 Signal',
+                            gridcolor: '#475569',
+                            zerolinecolor: '#64748b'
+                          }
+                        }),
+                        margin: { t: 20, r: 20, b: 40, l: 60 },
+                        legend: {
+                          font: { color: '#e2e8f0' }
+                        }
+                      }}
+                      config={{
+                        displayModeBar: true,
+                        displaylogo: false,
+                        modeBarButtonsToRemove: ['pan2d', 'lasso2d']
+                      }}
+                      style={{
+                        width: '100%',
+                        height: fullScreenChart === 'feature-space' ? 'calc(100vh - 200px)' : '100%'
+                      }}
+                    />
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex justify-center gap-6 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-blue-500 shadow-lg"></div>
+                      <span className="text-slate-300">WIMP Candidates</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-red-500 shadow-lg"></div>
+                      <span className="text-slate-300">Neutron Events</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-green-500 shadow-lg"></div>
+                      <span className="text-slate-300">Background</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Timeline View */}
+          <div className="mt-8">
+            <Card className="chart-card relative overflow-hidden">
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-red-900/20 animate-pulse" style={{ animationDuration: '5s' }}></div>
+              <CardHeader className="relative z-10">
+                <div className="flex justify-between items-center">
+                  <CardTitle className="section-heading">
+                    <Clock className="icon text-purple-400 animate-pulse" />
+                    Timeline View
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadChart('timeline', 'timeline-plot')}
+                      className="border-slate-600 hover:bg-slate-700 hover:border-purple-400 transition-all duration-300 hover:shadow-lg hover:shadow-purple-400/20"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleFullScreen('timeline')}
+                      className="border-slate-600 hover:bg-slate-700 hover:border-pink-400 transition-all duration-300 hover:shadow-lg hover:shadow-pink-400/20"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="space-y-4">
+                  {/* Timeline Controls */}
+                  <div className="flex items-center gap-4 mb-4">
+                    <span className="text-sm text-slate-300 font-medium">Time Range:</span>
+                    <div className="flex-1 px-4">
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={timelineRange[0]}
+                        onChange={(e) => setTimelineRange([parseInt(e.target.value), timelineRange[1]])}
+                        className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb"
+                      />
+                    </div>
+                    <span className="text-xs text-slate-400 w-20 font-mono">
+                      {timelineRange[0]}% - {timelineRange[1]}%
+                    </span>
+                  </div>
+
+                  {/* Timeline Plot */}
+                  <div
+                    ref={(el) => chartRefs.current['timeline'] = el}
+                    className={`${fullScreenChart === 'timeline'
+                      ? 'fixed inset-0 z-50 bg-slate-900 p-8'
+                      : 'h-80'
+                      }`}
+                  >
+                    <Plot
+                      data={[
+                        {
+                          x: mockEventData.map(d => d.timestamp),
+                          y: mockEventData.map(d => d.confidence),
+                          mode: 'markers+lines',
+                          type: 'scatter',
+                          marker: {
+                            size: 10,
+                            color: mockEventData.map(d =>
+                              d.type === 'WIMP' ? '#3b82f6' :
+                                d.type === 'Neutrino' ? '#ef4444' : '#10b981'
+                            ),
+                            opacity: 0.8,
+                            line: {
+                              color: '#ffffff',
+                              width: 2
+                            }
+                          },
+                          line: {
+                            color: '#64748b',
+                            width: 1
+                          },
+                          text: mockEventData.map(d =>
+                            `Event ${d.id}<br>Time: ${new Date(d.timestamp || '').toLocaleTimeString()}<br>Type: ${d.type}<br>Confidence: ${d.confidence}%`
+                          ),
+                          hovertemplate: '%{text}<extra></extra>',
+                          name: 'Events'
+                        },
+                        // Anomaly highlights
+                        {
+                          x: mockEventData.filter(d => d.confidence < 70).map(d => d.timestamp),
+                          y: mockEventData.filter(d => d.confidence < 70).map(d => d.confidence),
+                          mode: 'markers',
+                          type: 'scatter',
+                          marker: {
+                            size: 15,
+                            color: 'transparent',
+                            line: {
+                              color: '#fbbf24',
+                              width: 3
+                            },
+                            symbol: 'circle-open'
+                          },
+                          text: mockEventData.filter(d => d.confidence < 70).map(d =>
+                            `ANOMALY: Event ${d.id}<br>Time: ${new Date(d.timestamp).toLocaleTimeString()}<br>Low confidence: ${d.confidence}%`
+                          ),
+                          hovertemplate: '%{text}<extra></extra>',
+                          name: 'Anomalies',
+                          showlegend: true
+                        }
+                      ]}
+                      layout={{
+                        paper_bgcolor: 'transparent',
+                        plot_bgcolor: 'transparent',
+                        font: { color: '#e2e8f0' },
+                        xaxis: {
+                          title: 'Time',
                           gridcolor: '#475569',
-                          zerolinecolor: '#64748b'
+                          zerolinecolor: '#64748b',
+                          type: 'date'
                         },
-                        yaxis: { 
-                          title: 'S1 Signal', 
+                        yaxis: {
+                          title: 'Confidence Score (%)',
                           gridcolor: '#475569',
-                          zerolinecolor: '#64748b'
+                          zerolinecolor: '#64748b',
+                          range: [0, 100]
                         },
-                        zaxis: { 
-                          title: 'S2 Signal', 
-                          gridcolor: '#475569',
-                          zerolinecolor: '#64748b'
+                        margin: { t: 20, r: 20, b: 60, l: 60 },
+                        legend: {
+                          font: { color: '#e2e8f0' },
+                          x: 1,
+                          y: 1
                         },
-                        bgcolor: 'transparent',
-                        camera: {
-                          eye: { x: 1.5, y: 1.5, z: 1.5 }
-                        }
-                      }
-                    } : {
-                      xaxis: { 
-                        title: plot3DMode.includes('x') ? 'Energy (keV)' : 'S2 Signal',
-                        gridcolor: '#475569',
-                        zerolinecolor: '#64748b'
-                      },
-                      yaxis: { 
-                        title: plot3DMode === 'xy' ? 'S1 Signal' : 'S2 Signal',
-                        gridcolor: '#475569',
-                        zerolinecolor: '#64748b'
-                      }
-                    }),
-                    margin: { t: 20, r: 20, b: 40, l: 60 },
-                    legend: {
-                      font: { color: '#e2e8f0' }
-                    }
-                  }}
-                  config={{
-                    displayModeBar: true,
-                    displaylogo: false,
-                    modeBarButtonsToRemove: ['pan2d', 'lasso2d']
-                  }}
-                  style={{ 
-                    width: '100%', 
-                    height: fullScreenChart === 'feature-space' ? 'calc(100vh - 200px)' : '100%' 
-                  }}
-                />
-              </div>
+                        shapes: [
+                          // Confidence threshold line
+                          {
+                            type: 'line',
+                            x0: mockEventData[0]?.timestamp,
+                            x1: mockEventData[mockEventData.length - 1]?.timestamp,
+                            y0: 70,
+                            y1: 70,
+                            line: {
+                              color: '#fbbf24',
+                              width: 2,
+                              dash: 'dash'
+                            }
+                          }
+                        ],
+                        annotations: [
+                          {
+                            x: mockEventData[Math.floor(mockEventData.length / 2)]?.timestamp,
+                            y: 72,
+                            text: 'Anomaly Threshold',
+                            showarrow: false,
+                            font: { color: '#fbbf24', size: 12 }
+                          }
+                        ]
+                      }}
+                      config={{
+                        displayModeBar: true,
+                        displaylogo: false,
+                        modeBarButtonsToRemove: ['pan2d', 'lasso2d']
+                      }}
+                      style={{
+                        width: '100%',
+                        height: fullScreenChart === 'timeline' ? 'calc(100vh - 200px)' : '100%'
+                      }}
+                    />
+                  </div>
 
-              {/* Legend */}
-              <div className="flex justify-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-blue-500 shadow-lg"></div>
-                  <span className="text-slate-300">WIMP Candidates</span>
+                  {/* Timeline Statistics */}
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div
+                      className="stat-card"
+                      style={{ animationDelay: '0.1s' }}
+                    >
+                      <div className="stat-number text-2xl">
+                        {mockEventData.filter(d => d.type === 'WIMP').length}
+                      </div>
+                      <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">WIMP Events</div>
+                    </div>
+                    <div
+                      className="stat-card"
+                      style={{ animationDelay: '0.25s' }}
+                    >
+                      <div className="stat-number text-2xl">
+                        {mockEventData.filter(d => d.confidence < 70).length}
+                      </div>
+                      <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">Low Confidence</div>
+                    </div>
+                    <div
+                      className="stat-card"
+                      style={{ animationDelay: '0.4s' }}
+                    >
+                      <div className="stat-number text-2xl">
+                        {(mockEventData.reduce((acc, d) => acc + d.confidence, 0) / mockEventData.length).toFixed(1)}%
+                      </div>
+                      <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">Avg Confidence</div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-red-500 shadow-lg"></div>
-                  <span className="text-slate-300">Neutron Events</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-green-500 shadow-lg"></div>
-                  <span className="text-slate-300">Background</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      {/* Timeline View */}
-      <div className="mt-8">
-        <Card className="chart-card relative overflow-hidden">
-          {/* Animated background gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-red-900/20 animate-pulse" style={{animationDuration: '5s'}}></div>
-          <CardHeader className="relative z-10">
-            <div className="flex justify-between items-center">
-              <CardTitle className="section-heading">
-                <Clock className="icon text-purple-400 animate-pulse" />
-                Timeline View
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => downloadChart('timeline', 'timeline-plot')}
-                  className="border-slate-600 hover:bg-slate-700 hover:border-purple-400 transition-all duration-300 hover:shadow-lg hover:shadow-purple-400/20"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleFullScreen('timeline')}
-                  className="border-slate-600 hover:bg-slate-700 hover:border-pink-400 transition-all duration-300 hover:shadow-lg hover:shadow-pink-400/20"
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="relative z-10">
-            <div className="space-y-4">
-              {/* Timeline Controls */}
-              <div className="flex items-center gap-4 mb-4">
-                <span className="text-sm text-slate-300 font-medium">Time Range:</span>
-                <div className="flex-1 px-4">
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={timelineRange[0]}
-                    onChange={(e) => setTimelineRange([parseInt(e.target.value), timelineRange[1]])}
-                    className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb"
-                  />
+          {/* Distribution Histograms */}
+          <div className="mt-8">
+            <Card className="chart-card">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="section-heading">
+                    <BarChart3 className="icon text-green-400" />
+                    Feature Distributions
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => downloadChart('distributions', 'feature-distributions')}
+                      className="border-slate-600 hover:bg-slate-700"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleFullScreen('distributions')}
+                      className="border-slate-600 hover:bg-slate-700"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <span className="text-xs text-slate-400 w-20 font-mono">
-                  {timelineRange[0]}% - {timelineRange[1]}%
-                </span>
-              </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Energy Distribution */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-slate-300">Energy Distribution (keV)</h4>
+                    <div
+                      ref={(el) => chartRefs.current['energy-dist'] = el}
+                      className="h-64"
+                    >
+                      <Plot
+                        data={[
+                          {
+                            x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.energy),
+                            type: 'histogram',
+                            name: 'WIMP',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#22d3ee',
+                              line: { color: '#0891b2', width: 1 }
+                            },
+                            xbins: { size: 5 }
+                          },
+                          {
+                            x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.energy),
+                            type: 'histogram',
+                            name: 'Neutrino',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#a855f7',
+                              line: { color: '#9333ea', width: 1 }
+                            },
+                            xbins: { size: 5 }
+                          },
+                          {
+                            x: mockEventData.filter(d => d.type === 'Background').map(d => d.energy),
+                            type: 'histogram',
+                            name: 'Background',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#ef4444',
+                              line: { color: '#dc2626', width: 1 }
+                            },
+                            xbins: { size: 5 }
+                          }
+                        ]}
+                        layout={{
+                          paper_bgcolor: 'transparent',
+                          plot_bgcolor: 'transparent',
+                          font: { color: '#e2e8f0', size: 10 },
+                          xaxis: {
+                            title: 'Energy (keV)',
+                            gridcolor: 'rgba(51, 65, 85, 0.3)',
+                            zerolinecolor: '#64748b'
+                          },
+                          yaxis: {
+                            title: 'Count',
+                            gridcolor: 'rgba(51, 65, 85, 0.3)',
+                            zerolinecolor: '#64748b'
+                          },
+                          margin: { t: 20, r: 20, b: 40, l: 40 },
+                          legend: {
+                            font: { color: '#cbd5e1', size: 10 },
+                            x: 1, y: 1
+                          },
+                          barmode: 'overlay'
+                        }}
+                        config={{
+                          displayModeBar: false,
+                          displaylogo: false
+                        }}
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    </div>
+                    <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
+                      <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.energy, 0) / mockEventData.length).toFixed(1)} keV
+                    </div>
+                  </div>
 
-              {/* Timeline Plot */}
-              <div 
-                ref={(el) => chartRefs.current['timeline'] = el}
-                className={`${
-                  fullScreenChart === 'timeline' 
-                    ? 'fixed inset-0 z-50 bg-slate-900 p-8' 
-                    : 'h-80'
-                }`}
-              >
-                <Plot
-                  data={[
-                    {
-                      x: mockEventData.map(d => d.timestamp),
-                      y: mockEventData.map(d => d.confidence),
-                      mode: 'markers+lines',
-                      type: 'scatter',
-                      marker: {
-                        size: 10,
-                        color: mockEventData.map(d => 
-                          d.type === 'WIMP' ? '#3b82f6' : 
-                          d.type === 'Neutrino' ? '#ef4444' : '#10b981'
-                        ),
-                        opacity: 0.8,
-                        line: {
-                          color: '#ffffff',
-                          width: 2
-                        }
-                      },
-                      line: {
-                        color: '#64748b',
-                        width: 1
-                      },
-                      text: mockEventData.map(d => 
-                        `Event ${d.id}<br>Time: ${new Date(d.timestamp || '').toLocaleTimeString()}<br>Type: ${d.type}<br>Confidence: ${d.confidence}%`
-                      ),
-                      hovertemplate: '%{text}<extra></extra>',
-                      name: 'Events'
-                    },
-                    // Anomaly highlights
-                    {
-                      x: mockEventData.filter(d => d.confidence < 70).map(d => d.timestamp),
-                      y: mockEventData.filter(d => d.confidence < 70).map(d => d.confidence),
-                      mode: 'markers',
-                      type: 'scatter',
-                      marker: {
-                        size: 15,
-                        color: 'transparent',
-                        line: {
-                          color: '#fbbf24',
-                          width: 3
-                        },
-                        symbol: 'circle-open'
-                      },
-                      text: mockEventData.filter(d => d.confidence < 70).map(d => 
-                        `ANOMALY: Event ${d.id}<br>Time: ${new Date(d.timestamp).toLocaleTimeString()}<br>Low confidence: ${d.confidence}%`
-                      ),
-                      hovertemplate: '%{text}<extra></extra>',
-                      name: 'Anomalies',
-                      showlegend: true
-                    }
-                  ]}
-                  layout={{
-                    paper_bgcolor: 'transparent',
-                    plot_bgcolor: 'transparent',
-                    font: { color: '#e2e8f0' },
-                    xaxis: { 
-                      title: 'Time',
-                      gridcolor: '#475569',
-                      zerolinecolor: '#64748b',
-                      type: 'date'
-                    },
-                    yaxis: { 
-                      title: 'Confidence Score (%)',
-                      gridcolor: '#475569',
-                      zerolinecolor: '#64748b',
-                      range: [0, 100]
-                    },
-                    margin: { t: 20, r: 20, b: 60, l: 60 },
-                    legend: {
-                      font: { color: '#e2e8f0' },
-                      x: 1,
-                      y: 1
-                    },
-                    shapes: [
-                      // Confidence threshold line
-                      {
-                        type: 'line',
-                        x0: mockEventData[0]?.timestamp,
-                        x1: mockEventData[mockEventData.length - 1]?.timestamp,
-                        y0: 70,
-                        y1: 70,
-                        line: {
-                          color: '#fbbf24',
-                          width: 2,
-                          dash: 'dash'
-                        }
-                      }
-                    ],
-                    annotations: [
-                      {
-                        x: mockEventData[Math.floor(mockEventData.length / 2)]?.timestamp,
-                        y: 72,
-                        text: 'Anomaly Threshold',
-                        showarrow: false,
-                        font: { color: '#fbbf24', size: 12 }
-                      }
-                    ]
-                  }}
-                  config={{
-                    displayModeBar: true,
-                    displaylogo: false,
-                    modeBarButtonsToRemove: ['pan2d', 'lasso2d']
-                  }}
-                  style={{ 
-                    width: '100%', 
-                    height: fullScreenChart === 'timeline' ? 'calc(100vh - 200px)' : '100%' 
-                  }}
-                />
-              </div>
+                  {/* S1 Distribution */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-slate-300">S1 Signal Distribution</h4>
+                    <div
+                      ref={(el) => chartRefs.current['s1-dist'] = el}
+                      className="h-64"
+                    >
+                      <Plot
+                        data={[
+                          {
+                            x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.s1),
+                            type: 'histogram',
+                            name: 'WIMP',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#3b82f6',
+                              line: { color: '#2563eb', width: 1 }
+                            },
+                            xbins: { size: 20 }
+                          },
+                          {
+                            x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.s1),
+                            type: 'histogram',
+                            name: 'Neutrino',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#a855f7',
+                              line: { color: '#9333ea', width: 1 }
+                            },
+                            xbins: { size: 20 }
+                          },
+                          {
+                            x: mockEventData.filter(d => d.type === 'Background').map(d => d.s1),
+                            type: 'histogram',
+                            name: 'Background',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#ef4444',
+                              line: { color: '#dc2626', width: 1 }
+                            },
+                            xbins: { size: 20 }
+                          }
+                        ]}
+                        layout={{
+                          paper_bgcolor: 'transparent',
+                          plot_bgcolor: 'transparent',
+                          font: { color: '#e2e8f0', size: 10 },
+                          xaxis: {
+                            title: 'S1 Signal',
+                            gridcolor: 'rgba(51, 65, 85, 0.3)',
+                            zerolinecolor: '#64748b'
+                          },
+                          yaxis: {
+                            title: 'Count',
+                            gridcolor: 'rgba(51, 65, 85, 0.3)',
+                            zerolinecolor: '#64748b'
+                          },
+                          margin: { t: 20, r: 20, b: 40, l: 40 },
+                          legend: {
+                            font: { color: '#cbd5e1', size: 10 },
+                            x: 1, y: 1
+                          },
+                          barmode: 'overlay'
+                        }}
+                        config={{
+                          displayModeBar: false,
+                          displaylogo: false
+                        }}
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    </div>
+                    <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
+                      <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.s1, 0) / mockEventData.length).toFixed(1)}
+                    </div>
+                  </div>
 
-              {/* Timeline Statistics */}
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div 
-                  className="stat-card"
-                  style={{ animationDelay: '0.1s' }}
-                >
-                  <div className="stat-number text-2xl">
-                    {mockEventData.filter(d => d.type === 'WIMP').length}
+                  {/* S2 Distribution */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold text-slate-300">S2 Signal Distribution</h4>
+                    <div
+                      ref={(el) => chartRefs.current['s2-dist'] = el}
+                      className="h-64"
+                    >
+                      <Plot
+                        data={[
+                          {
+                            x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.s2),
+                            type: 'histogram',
+                            name: 'WIMP',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#3b82f6',
+                              line: { color: '#2563eb', width: 1 }
+                            },
+                            xbins: { size: 500 }
+                          },
+                          {
+                            x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.s2),
+                            type: 'histogram',
+                            name: 'Neutrino',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#a855f7',
+                              line: { color: '#9333ea', width: 1 }
+                            },
+                            xbins: { size: 500 }
+                          },
+                          {
+                            x: mockEventData.filter(d => d.type === 'Background').map(d => d.s2),
+                            type: 'histogram',
+                            name: 'Background',
+                            opacity: 0.8,
+                            marker: {
+                              color: '#ef4444',
+                              line: { color: '#dc2626', width: 1 }
+                            },
+                            xbins: { size: 500 }
+                          }
+                        ]}
+                        layout={{
+                          paper_bgcolor: 'transparent',
+                          plot_bgcolor: 'transparent',
+                          font: { color: '#e2e8f0', size: 10 },
+                          xaxis: {
+                            title: 'S2 Signal',
+                            gridcolor: 'rgba(51, 65, 85, 0.3)',
+                            zerolinecolor: '#64748b'
+                          },
+                          yaxis: {
+                            title: 'Count',
+                            gridcolor: 'rgba(51, 65, 85, 0.3)',
+                            zerolinecolor: '#64748b'
+                          },
+                          margin: { t: 20, r: 20, b: 40, l: 40 },
+                          legend: {
+                            font: { color: '#cbd5e1', size: 10 },
+                            x: 1, y: 1
+                          },
+                          barmode: 'overlay'
+                        }}
+                        config={{
+                          displayModeBar: false,
+                          displaylogo: false
+                        }}
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    </div>
+                    <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
+                      <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.s2, 0) / mockEventData.length).toFixed(0)}
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">WIMP Events</div>
                 </div>
-                <div 
-                  className="stat-card"
-                  style={{ animationDelay: '0.25s' }}
-                >
-                  <div className="stat-number text-2xl">
-                    {mockEventData.filter(d => d.confidence < 70).length}
-                  </div>
-                  <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">Low Confidence</div>
-                </div>
-                <div 
-                  className="stat-card"
-                  style={{ animationDelay: '0.4s' }}
-                >
-                  <div className="stat-number text-2xl">
-                    {(mockEventData.reduce((acc, d) => acc + d.confidence, 0) / mockEventData.length).toFixed(1)}%
-                  </div>
-                  <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">Avg Confidence</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Distribution Histograms */}
-      <div className="mt-8">
-        <Card className="chart-card">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle className="section-heading">
-                <BarChart3 className="icon text-green-400" />
-                Feature Distributions
-              </CardTitle>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => downloadChart('distributions', 'feature-distributions')}
-                  className="border-slate-600 hover:bg-slate-700"
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleFullScreen('distributions')}
-                  className="border-slate-600 hover:bg-slate-700"
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Energy Distribution */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-slate-300">Energy Distribution (keV)</h4>
-                <div 
-                  ref={(el) => chartRefs.current['energy-dist'] = el}
-                  className="h-64"
-                >
-                  <Plot
-                    data={[
-                      {
-                        x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.energy),
-                        type: 'histogram',
-                        name: 'WIMP',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#22d3ee',
-                          line: { color: '#0891b2', width: 1 }
-                        },
-                        xbins: { size: 5 }
-                      },
-                      {
-                        x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.energy),
-                        type: 'histogram',
-                        name: 'Neutrino',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#a855f7',
-                          line: { color: '#9333ea', width: 1 }
-                        },
-                        xbins: { size: 5 }
-                      },
-                      {
-                        x: mockEventData.filter(d => d.type === 'Background').map(d => d.energy),
-                        type: 'histogram',
-                        name: 'Background',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#ef4444',
-                          line: { color: '#dc2626', width: 1 }
-                        },
-                        xbins: { size: 5 }
-                      }
-                    ]}
-                    layout={{
-                      paper_bgcolor: 'transparent',
-                      plot_bgcolor: 'transparent',
-                      font: { color: '#e2e8f0', size: 10 },
-                      xaxis: { 
-                        title: 'Energy (keV)',
-                        gridcolor: 'rgba(51, 65, 85, 0.3)',
-                        zerolinecolor: '#64748b'
-                      },
-                      yaxis: { 
-                        title: 'Count',
-                        gridcolor: 'rgba(51, 65, 85, 0.3)',
-                        zerolinecolor: '#64748b'
-                      },
-                      margin: { t: 20, r: 20, b: 40, l: 40 },
-                      legend: { 
-                        font: { color: '#cbd5e1', size: 10 },
-                        x: 1, y: 1
-                      },
-                      barmode: 'overlay'
-                    }}
-                    config={{
-                      displayModeBar: false,
-                      displaylogo: false
-                    }}
-                    style={{ width: '100%', height: '100%' }}
-                  />
+                {/* Statistical Summary */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
+                    <h5 className="text-sm font-semibold text-cyan-300 mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                      Energy Statistics
+                    </h5>
+                    <div className="space-y-2 text-xs text-slate-400">
+                      <div className="flex justify-between">
+                        <span>Min:</span>
+                        <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.energy)).toFixed(1)} keV</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Max:</span>
+                        <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.energy)).toFixed(1)} keV</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Std:</span>
+                        <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.energy - mockEventData.reduce((a, b) => a + b.energy, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(1)} keV</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
+                    <h5 className="text-sm font-semibold text-blue-300 mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                      S1 Statistics
+                    </h5>
+                    <div className="space-y-2 text-xs text-slate-400">
+                      <div className="flex justify-between">
+                        <span>Min:</span>
+                        <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.s1)).toFixed(1)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Max:</span>
+                        <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.s1)).toFixed(1)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Std:</span>
+                        <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.s1 - mockEventData.reduce((a, b) => a + b.s1, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(1)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
+                    <h5 className="text-sm font-semibold text-purple-300 mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
+                      S2 Statistics
+                    </h5>
+                    <div className="space-y-2 text-xs text-slate-400">
+                      <div className="flex justify-between">
+                        <span>Min:</span>
+                        <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.s2)).toFixed(0)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Max:</span>
+                        <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.s2)).toFixed(0)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Std:</span>
+                        <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.s2 - mockEventData.reduce((a, b) => a + b.s2, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(0)}</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
-                  <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.energy, 0) / mockEventData.length).toFixed(1)} keV
-                </div>
-              </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              {/* S1 Distribution */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-slate-300">S1 Signal Distribution</h4>
-                <div 
-                  ref={(el) => chartRefs.current['s1-dist'] = el}
-                  className="h-64"
-                >
-                  <Plot
-                    data={[
-                      {
-                        x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.s1),
-                        type: 'histogram',
-                        name: 'WIMP',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#3b82f6',
-                          line: { color: '#2563eb', width: 1 }
-                        },
-                        xbins: { size: 20 }
-                      },
-                      {
-                        x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.s1),
-                        type: 'histogram',
-                        name: 'Neutrino',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#a855f7',
-                          line: { color: '#9333ea', width: 1 }
-                        },
-                        xbins: { size: 20 }
-                      },
-                      {
-                        x: mockEventData.filter(d => d.type === 'Background').map(d => d.s1),
-                        type: 'histogram',
-                        name: 'Background',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#ef4444',
-                          line: { color: '#dc2626', width: 1 }
-                        },
-                        xbins: { size: 20 }
-                      }
-                    ]}
-                    layout={{
-                      paper_bgcolor: 'transparent',
-                      plot_bgcolor: 'transparent',
-                      font: { color: '#e2e8f0', size: 10 },
-                      xaxis: { 
-                        title: 'S1 Signal',
-                        gridcolor: 'rgba(51, 65, 85, 0.3)',
-                        zerolinecolor: '#64748b'
-                      },
-                      yaxis: { 
-                        title: 'Count',
-                        gridcolor: 'rgba(51, 65, 85, 0.3)',
-                        zerolinecolor: '#64748b'
-                      },
-                      margin: { t: 20, r: 20, b: 40, l: 40 },
-                      legend: { 
-                        font: { color: '#cbd5e1', size: 10 },
-                        x: 1, y: 1
-                      },
-                      barmode: 'overlay'
-                    }}
-                    config={{
-                      displayModeBar: false,
-                      displaylogo: false
-                    }}
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                </div>
-                <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
-                  <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.s1, 0) / mockEventData.length).toFixed(1)}
-                </div>
-              </div>
-
-              {/* S2 Distribution */}
-              <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-slate-300">S2 Signal Distribution</h4>
-                <div 
-                  ref={(el) => chartRefs.current['s2-dist'] = el}
-                  className="h-64"
-                >
-                  <Plot
-                    data={[
-                      {
-                        x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.s2),
-                        type: 'histogram',
-                        name: 'WIMP',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#3b82f6',
-                          line: { color: '#2563eb', width: 1 }
-                        },
-                        xbins: { size: 500 }
-                      },
-                      {
-                        x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.s2),
-                        type: 'histogram',
-                        name: 'Neutrino',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#a855f7',
-                          line: { color: '#9333ea', width: 1 }
-                        },
-                        xbins: { size: 500 }
-                      },
-                      {
-                        x: mockEventData.filter(d => d.type === 'Background').map(d => d.s2),
-                        type: 'histogram',
-                        name: 'Background',
-                        opacity: 0.8,
-                        marker: { 
-                          color: '#ef4444',
-                          line: { color: '#dc2626', width: 1 }
-                        },
-                        xbins: { size: 500 }
-                      }
-                    ]}
-                    layout={{
-                      paper_bgcolor: 'transparent',
-                      plot_bgcolor: 'transparent',
-                      font: { color: '#e2e8f0', size: 10 },
-                      xaxis: { 
-                        title: 'S2 Signal',
-                        gridcolor: 'rgba(51, 65, 85, 0.3)',
-                        zerolinecolor: '#64748b'
-                      },
-                      yaxis: { 
-                        title: 'Count',
-                        gridcolor: 'rgba(51, 65, 85, 0.3)',
-                        zerolinecolor: '#64748b'
-                      },
-                      margin: { t: 20, r: 20, b: 40, l: 40 },
-                      legend: { 
-                        font: { color: '#cbd5e1', size: 10 },
-                        x: 1, y: 1
-                      },
-                      barmode: 'overlay'
-                    }}
-                    config={{
-                      displayModeBar: false,
-                      displaylogo: false
-                    }}
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                </div>
-                <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
-                  <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.s2, 0) / mockEventData.length).toFixed(0)}
-                </div>
-              </div>
-            </div>
-
-            {/* Statistical Summary */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
-                <h5 className="text-sm font-semibold text-cyan-300 mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
-                  Energy Statistics
-                </h5>
-                <div className="space-y-2 text-xs text-slate-400">
-                  <div className="flex justify-between">
-                    <span>Min:</span>
-                    <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.energy)).toFixed(1)} keV</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Max:</span>
-                    <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.energy)).toFixed(1)} keV</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Std:</span>
-                    <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.energy - mockEventData.reduce((a, b) => a + b.energy, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(1)} keV</span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
-                <h5 className="text-sm font-semibold text-blue-300 mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                  S1 Statistics
-                </h5>
-                <div className="space-y-2 text-xs text-slate-400">
-                  <div className="flex justify-between">
-                    <span>Min:</span>
-                    <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.s1)).toFixed(1)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Max:</span>
-                    <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.s1)).toFixed(1)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Std:</span>
-                    <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.s1 - mockEventData.reduce((a, b) => a + b.s1, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(1)}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
-                <h5 className="text-sm font-semibold text-purple-300 mb-3 flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                  S2 Statistics
-                </h5>
-                <div className="space-y-2 text-xs text-slate-400">
-                  <div className="flex justify-between">
-                    <span>Min:</span>
-                    <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.s2)).toFixed(0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Max:</span>
-                    <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.s2)).toFixed(0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Std:</span>
-                    <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.s2 - mockEventData.reduce((a, b) => a + b.s2, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(0)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Event Data Table */}
-      <div className="mt-8">
-        <DataTable
-          data={mockEventData}
-          title="Detection Events"
-          onViewDetails={handleViewDetails}
-          onEdit={handleEditEvent}
-          onFlag={handleFlagAnomaly}
-          onExport={handleExportEvents}
-        />
-      </div>
+          {/* Event Data Table */}
+          <div className="mt-8">
+            <DataTable
+              data={mockEventData}
+              title="Detection Events"
+              onViewDetails={handleViewDetails}
+              onEdit={handleEditEvent}
+              onFlag={handleFlagAnomaly}
+              onExport={handleExportEvents}
+            />
+          </div>
+        </>
+      )}
     </PageLayout>
   );
 };

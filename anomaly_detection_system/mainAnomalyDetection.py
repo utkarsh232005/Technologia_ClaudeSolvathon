@@ -20,14 +20,14 @@ from dotenv import load_dotenv
 load_dotenv(Path('../.env'))
 
 # Configuration - Using Claude API
-API_KEY = os.getenv("ANTHROPIC_API_KEY")
+API_KEY = os.getenv("ANTHROPIC_API_KEY") or os.getenv("CLAUDE_API_KEY")
 if not API_KEY or API_KEY == "API KEY HERE":
     print("\n" + "="*80)
-    print("ERROR: ANTHROPIC_API_KEY not configured!")
+    print("ERROR: ANTHROPIC_API_KEY or CLAUDE_API_KEY not configured!")
     print("="*80)
     print("\nPlease set your Claude API key in the .env file:")
     print("1. Open: ../.env")
-    print("2. Replace 'API KEY HERE' with your actual Claude API key")
+    print("2. Add: ANTHROPIC_API_KEY=your_api_key_here OR CLAUDE_API_KEY=your_api_key_here")
     print("3. Get API key from: https://console.anthropic.com/")
     print("\n" + "="*80 + "\n")
     sys.exit(1)

@@ -94,6 +94,7 @@ const ReportGenerator = () => {
     const loadRealData = async () => {
       let loadedClassificationData = false;
       let loadedHypothesisData = false;
+      let classificationCount = 0;
 
       try {
         // Load classification results from public directory
@@ -108,6 +109,7 @@ const ReportGenerator = () => {
           if (Array.isArray(classificationJson) && classificationJson.length > 0) {
             setClassificationData(classificationJson);
             loadedClassificationData = true;
+            classificationCount = classificationJson.length;
             console.log(`✅ Successfully loaded ${classificationJson.length} classified events`);
           }
         } else {
@@ -149,7 +151,7 @@ const ReportGenerator = () => {
       console.log('Data loading complete:', {
         classification: loadedClassificationData,
         hypothesis: loadedHypothesisData,
-        classificationCount: loadedClassificationData ? classificationData.length : 0
+        classificationCount
       });
     };
 
@@ -931,15 +933,15 @@ ${selectedSections.includes('Proposed Follow-ups') ? 'The proposed follow-up pro
                       key={type.id}
                       onClick={() => updateConfig('type', type.id)}
                       className={`bg-slate-800/60 border-[1.5px] rounded-lg p-4 cursor-pointer transition-all duration-250 hover:bg-slate-800/80 hover:border-blue-500 hover:translate-x-0.5 ${config.type === type.id
-                          ? 'bg-blue-600/12 border-blue-500 border-2 shadow-[0_0_0_3px_rgba(59,130,246,0.1)]'
-                          : 'border-slate-600'
+                        ? 'bg-blue-600/12 border-blue-500 border-2 shadow-[0_0_0_3px_rgba(59,130,246,0.1)]'
+                        : 'border-slate-600'
                         }`}
                     >
                       <div className="flex items-start space-x-4">
                         <div className="relative mt-1">
                           <div className={`w-5 h-5 rounded-full border-2 transition-all duration-250 ${config.type === type.id
-                              ? 'border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.15)]'
-                              : 'border-slate-500'
+                            ? 'border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.15)]'
+                            : 'border-slate-500'
                             }`}>
                             {config.type === type.id && (
                               <div className="absolute inset-1 rounded-full bg-gradient-to-br from-purple-600 to-cyan-500"></div>

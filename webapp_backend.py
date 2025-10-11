@@ -16,6 +16,10 @@ from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import pandas as pd
 import numpy as np
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Import our classification modules
 import sys
@@ -27,6 +31,27 @@ from mainClassify import (
     select_and_sample_events,
     create_api_prompt_and_schema
 )
+
+# Import anomaly detection system
+anomaly_sys_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'anomaly_detection_system')
+sys.path.insert(0, anomaly_sys_path)
+
+# Import with proper error handling
+try:
+    from mainAnomalyDetection import (
+        classify_event_with_claude,
+        detect_anomalies_advanced
+    )
+    ANOMALY_DETECTION_AVAILABLE = True
+    print("✅ Anomaly detection system imported successfully")
+except ImportError as e:
+    print(f"⚠️  Warning: Could not import anomaly detection system: {e}")
+    ANOMALY_DETECTION_AVAILABLE = False
+    # Create dummy functions
+    def classify_event_with_claude(event_data):
+        return {"classification": "Unknown", "confidence": 0.0, "reasoning": "Anomaly detection not available"}
+    def detect_anomalies_advanced(df, use_claude=True, max_events=None, threshold=0.3):
+        return pd.DataFrame()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for React frontend
@@ -144,6 +169,22 @@ def format_classification_result(api_result: Dict[str, Any], processing_time: fl
         },
         'processingTime': round(processing_time, 2)
     }
+
+def clean_nan_values(obj):
+    """
+    Recursively clean NaN, Infinity, and other non-JSON-serializable values from objects
+    """
+    if isinstance(obj, dict):
+        return {k: clean_nan_values(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [clean_nan_values(item) for item in obj]
+    elif isinstance(obj, float):
+        if np.isnan(obj) or np.isinf(obj):
+            return None
+        return obj
+    elif pd.isna(obj):
+        return None
+    return obj
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -444,13 +485,17 @@ def load_dataset():
         dataset_info = {
             'totalEvents': len(df),
             'columns': list(df.columns),
+            'classificationLabels': df['label'].unique().tolist() if 'label' in df.columns else [],
             'eventTypes': df['label'].value_counts().to_dict() if 'label' in df.columns else {},
             'energyRange': {
                 'min': float(df['recoil_energy_keV'].min()) if 'recoil_energy_keV' in df.columns else 0,
                 'max': float(df['recoil_energy_keV'].max()) if 'recoil_energy_keV' in df.columns else 0
             },
-            'preview': df.head(10).to_dict('records')
+            'preview': clean_nan_values(df.head(10).to_dict('records'))
         }
+        
+        # Clean NaN values before returning
+        dataset_info = clean_nan_values(dataset_info)
         
         return jsonify({
             'success': True,
@@ -463,6 +508,243 @@ def load_dataset():
             'error': f'Failed to load dataset: {str(e)}'
         }), 500
 
+@app.route('/api/anomaly/detect', methods=['POST'])
+def detect_anomalies():
+    """
+    Detect anomalies in event data using the anomaly detection system
+    Accepts single event or batch of events
+    """
+    try:
+        # Check if anomaly detection is available
+        if not ANOMALY_DETECTION_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'error': 'Anomaly detection system not available. Please ensure mainAnomalyDetection.py is accessible.'
+            }), 503
+        
+        data = request.json
+        
+        # Get event data (can be single event or array)
+        events = data.get('events', [])
+        if not events:
+            # Check if single event data provided
+            if 'energy' in data or 'recoil_energy_keV' in data:
+                events = [data]
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'No event data provided'
+                }), 400
+        
+        # Configuration options
+        use_claude = data.get('use_claude', True)
+        threshold = data.get('threshold', 0.3)
+        
+        print(f"Processing {len(events)} events for anomaly detection...")
+        
+        # Convert events to DataFrame format expected by anomaly detection system
+        df_data = []
+        for event in events:
+            # Map frontend field names to dataset column names
+            event_row = {
+                'recoil_energy_keV': float(event.get('energy', event.get('recoil_energy_keV', 0))),
+                's2_over_s1_ratio': float(event.get('s2s1Ratio', event.get('s2_over_s1_ratio', 
+                    event.get('s2', 0) / event.get('s1', 1) if event.get('s1', 1) != 0 else 0))),
+                's1_area_PE': float(event.get('s1', event.get('s1_area_PE', 0))),
+                's2_area_PE': float(event.get('s2', event.get('s2_area_PE', 0))),
+                'position_x_mm': float(event.get('position', {}).get('x', event.get('position_x_mm', 0)) if isinstance(event.get('position'), dict) else event.get('position_x_mm', 0)),
+                'position_y_mm': float(event.get('position', {}).get('y', event.get('position_y_mm', 0)) if isinstance(event.get('position'), dict) else event.get('position_y_mm', 0)),
+                'position_z_mm': float(event.get('position', {}).get('z', event.get('position_z_mm', 0)) if isinstance(event.get('position'), dict) else event.get('position_z_mm', 0)),
+                'drift_time_us': float(event.get('drift_time_us', 400)),
+                's1_width_ns': float(event.get('s1_width_ns', 50))
+            }
+            df_data.append(event_row)
+        
+        # Create DataFrame
+        df = pd.DataFrame(df_data)
+        print(f"Created DataFrame with {len(df)} rows")
+        print(f"Columns: {df.columns.tolist()}")
+        
+        # Run anomaly detection
+        anomaly_results = detect_anomalies_advanced(
+            df, 
+            use_claude=use_claude,
+            max_events=len(df),
+            threshold=threshold
+        )
+        
+        print(f"Anomaly detection complete. Found {len(anomaly_results)} anomalies")
+        
+        # Format results for frontend
+        results = []
+        for idx, anomaly in anomaly_results.iterrows():
+            result = {
+                'event_index': int(idx),
+                'is_anomaly': True,
+                'anomaly_score': float(anomaly.get('anomaly_score', 0)),
+                'anomaly_flags': anomaly.get('anomaly_flags', []) if isinstance(anomaly.get('anomaly_flags'), list) else [],
+                'classification': str(anomaly.get('classification', 'Unknown')),
+                'confidence': float(anomaly.get('confidence', 0)),
+                'reasoning': str(anomaly.get('reasoning', '')),
+                'event_data': {
+                    'energy': float(anomaly.get('recoil_energy_keV', 0)),
+                    's2s1Ratio': float(anomaly.get('s2_over_s1_ratio', 0)),
+                    's1': float(anomaly.get('s1_area_PE', 0)),
+                    's2': float(anomaly.get('s2_area_PE', 0))
+                }
+            }
+            results.append(result)
+        
+        return jsonify({
+            'success': True,
+            'anomalies_detected': len(results),
+            'total_events_analyzed': len(events),
+            'anomaly_rate': len(results) / len(events) if len(events) > 0 else 0,
+            'results': results
+        })
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error in anomaly detection: {str(e)}")
+        print(error_trace)
+        return jsonify({
+            'success': False,
+            'error': f'Anomaly detection failed: {str(e)}',
+            'details': error_trace if app.debug else None
+        }), 500
+
+@app.route('/api/anomaly/analyze-dataset', methods=['POST'])
+def analyze_dataset_for_anomalies():
+    """
+    Analyze the entire dataset for anomalies
+    """
+    try:
+        # Check if anomaly detection is available
+        if not ANOMALY_DETECTION_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'error': 'Anomaly detection system not available. Please ensure mainAnomalyDetection.py is accessible.'
+            }), 503
+        
+        # Load the dataset
+        dataset_path = os.path.join(os.path.dirname(__file__), 'dataset', 'dark_matter_synthetic_dataset.csv')
+        
+        print(f"Looking for dataset at: {dataset_path}")
+        
+        if not os.path.exists(dataset_path):
+            return jsonify({
+                'success': False,
+                'error': f'Dataset file not found at: {dataset_path}'
+            }), 404
+        
+        print("Loading dataset...")
+        df = pd.read_csv(dataset_path)
+        print(f"Loaded {len(df)} events from dataset")
+        
+        # Get parameters
+        data = request.json or {}
+        max_events = data.get('max_events', 100)  # Limit for performance
+        use_claude = data.get('use_claude', True)
+        threshold = data.get('threshold', 0.3)
+        
+        print(f"Analysis parameters: max_events={max_events}, use_claude={use_claude}, threshold={threshold}")
+        
+        # Analyze subset of dataset
+        df_subset = df.head(max_events)
+        print(f"Analyzing {len(df_subset)} events...")
+        
+        # Run anomaly detection
+        anomaly_results = detect_anomalies_advanced(
+            df_subset,
+            use_claude=use_claude,
+            max_events=max_events,
+            threshold=threshold
+        )
+        
+        print(f"Analysis complete. Found {len(anomaly_results)} anomalies")
+        
+        # Statistics
+        stats = {
+            'total_analyzed': len(df_subset),
+            'anomalies_detected': len(anomaly_results),
+            'anomaly_rate': len(anomaly_results) / len(df_subset) if len(df_subset) > 0 else 0,
+            'by_type': {},
+            'avg_anomaly_score': float(anomaly_results['anomaly_score'].mean()) if len(anomaly_results) > 0 and 'anomaly_score' in anomaly_results.columns else 0
+        }
+        
+        # Count by anomaly type
+        if len(anomaly_results) > 0 and 'classification' in anomaly_results.columns:
+            type_counts = anomaly_results['classification'].value_counts().to_dict()
+            stats['by_type'] = {str(k): int(v) for k, v in type_counts.items()}
+        
+        # Format top anomalies for frontend with full details
+        top_anomalies = []
+        for idx, row in anomaly_results.head(20).iterrows():
+            # Parse anomaly flags if they're stored as JSON string
+            anomaly_flags = row.get('Flags_Detail', row.get('anomaly_flags', []))
+            if isinstance(anomaly_flags, str):
+                try:
+                    anomaly_flags = json.loads(anomaly_flags)
+                except:
+                    anomaly_flags = []
+            elif not isinstance(anomaly_flags, list):
+                anomaly_flags = []
+            
+            # Determine severity
+            anomaly_score = float(row.get('Anomaly_Score', row.get('anomaly_score', 0)))
+            severity = 'Critical' if anomaly_score > 0.7 else 'High' if anomaly_score > 0.5 else 'Medium'
+            
+            # Helper function to safely convert values, handling NaN
+            def safe_float(val, default=0.0):
+                try:
+                    f = float(val)
+                    return None if (np.isnan(f) or np.isinf(f)) else f
+                except (ValueError, TypeError):
+                    return default
+            
+            anomaly_entry = {
+                'event_index': row.get('Event_ID', int(idx)),
+                'anomaly_score': safe_float(anomaly_score, 0.0),
+                'severity': severity,
+                'classification': str(row.get('AI_Classification', row.get('classification', 'Unknown'))),
+                'confidence': safe_float(row.get('AI_Confidence', row.get('confidence', 0))),
+                'energy': safe_float(row.get('Energy_keV', row.get('recoil_energy_keV', 0))),
+                's2s1_ratio': safe_float(row.get('S2_S1_Ratio', row.get('s2_over_s1_ratio', 0))),
+                'position_x': safe_float(row.get('Position_X', row.get('position_x_mm', 0))),
+                'position_y': safe_float(row.get('Position_Y', row.get('position_y_mm', 0))),
+                'drift_time': safe_float(row.get('Drift_Time_us', row.get('drift_time_us', 0))),
+                'anomaly_flags': anomaly_flags,
+                'reasoning': str(row.get('AI_Reasoning', '')) if 'AI_Reasoning' in row else '',
+                'num_flags': row.get('Num_Flags', len(anomaly_flags))
+            }
+            
+            # Clean the entry
+            anomaly_entry = clean_nan_values(anomaly_entry)
+            top_anomalies.append(anomaly_entry)
+        
+        print(f"Returning {len(top_anomalies)} top anomalies with full details")
+        
+        # Clean all NaN values before returning
+        response_data = clean_nan_values({
+            'success': True,
+            'statistics': stats,
+            'top_anomalies': top_anomalies
+        })
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error analyzing dataset: {str(e)}")
+        print(error_trace)
+        return jsonify({
+            'success': False,
+            'error': f'Dataset analysis failed: {str(e)}',
+            'details': error_trace if app.debug else None
+        }), 500
+
 if __name__ == '__main__':
     print("🚀 Starting Dark Matter Classification Backend Server...")
     print("📊 Webapp will connect to: http://localhost:5001")
@@ -472,6 +754,9 @@ if __name__ == '__main__':
     print("   POST /api/classify/batch")
     print("   POST /api/classify/batch/process")
     print("   GET  /api/dataset/load")
+    print("   POST /api/anomaly/detect")
+    print("   POST /api/anomaly/classify")
+    print("   POST /api/anomaly/analyze-dataset")
     print("\n⚡ Server starting on port 5001...")
     
     app.run(

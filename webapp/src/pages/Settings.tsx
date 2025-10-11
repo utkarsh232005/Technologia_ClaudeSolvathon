@@ -13,18 +13,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Settings as SettingsIcon, 
-  Eye, 
-  EyeOff, 
-  CheckCircle, 
-  XCircle, 
-  Download, 
-  Upload, 
-  RotateCcw, 
-  Save, 
-  Plus, 
-  Edit, 
+import {
+  Settings as SettingsIcon,
+  Eye,
+  EyeOff,
+  CheckCircle,
+  XCircle,
+  Download,
+  Upload,
+  RotateCcw,
+  Save,
+  Plus,
+  Edit,
   Trash2,
   Copy,
   Brain,
@@ -259,7 +259,7 @@ const Settings = () => {
   };
 
   // Update Claude settings
-  const updateClaudeSettings = (field: keyof ClaudeSettings, value: any) => {
+  const updateClaudeSettings = (field: keyof ClaudeSettings, value: string | number | boolean) => {
     setSettings(prev => ({
       ...prev,
       claude: { ...prev.claude, [field]: value }
@@ -267,7 +267,7 @@ const Settings = () => {
   };
 
   // Update classification parameters
-  const updateClassificationParams = (field: keyof ClassificationParameters, value: any) => {
+  const updateClassificationParams = (field: keyof ClassificationParameters, value: string | number | boolean) => {
     setSettings(prev => ({
       ...prev,
       classification: { ...prev.classification, [field]: value }
@@ -282,14 +282,14 @@ const Settings = () => {
     }
 
     setConnectionStatus('testing');
-    
+
     // Simulate API test
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
+
     // In a real implementation, you would make an actual API call here
     const success = settings.claude.apiKey.startsWith('sk-') && settings.claude.apiKey.length > 20;
     setConnectionStatus(success ? 'success' : 'error');
-    
+
     setTimeout(() => setConnectionStatus('idle'), 3000);
   };
 
@@ -322,7 +322,7 @@ const Settings = () => {
     const newPrompt: PromptTemplate = {
       id: `custom-${Date.now()}`,
       name: `Custom ${selectedPromptType} Template`,
-      type: selectedPromptType as any,
+      type: selectedPromptType as 'data-generation' | 'classification' | 'reasoning',
       content: editingPrompt,
       isDefault: false
     };
@@ -411,8 +411,8 @@ const Settings = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Button 
-                  onClick={saveSettings} 
+                <Button
+                  onClick={saveSettings}
                   disabled={saveStatus === 'saving'}
                   variant="premium"
                   className="group"
@@ -427,7 +427,7 @@ const Settings = () => {
                   </Badge>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={exportSettings}>
                   <Download className="w-4 h-4 mr-2" />
@@ -446,7 +446,7 @@ const Settings = () => {
                 />
               </div>
             </div>
-            
+
             {settings.lastModified && (
               <p className="text-xs text-muted-foreground mt-2">
                 Last modified: {new Date(settings.lastModified).toLocaleString()}
@@ -547,8 +547,8 @@ const Settings = () => {
 
                 {/* Test Connection */}
                 <div className="pt-4 border-t border-white/10">
-                  <Button 
-                    onClick={testConnection} 
+                  <Button
+                    onClick={testConnection}
                     disabled={connectionStatus === 'testing' || !settings.claude.apiKey}
                     className="w-full"
                   >
@@ -557,14 +557,14 @@ const Settings = () => {
                     {connectionStatus === 'error' && <XCircle className="w-4 h-4 mr-2 text-red-500" />}
                     {connectionStatus === 'testing' ? 'Testing Connection...' : 'Test Connection'}
                   </Button>
-                  
+
                   {connectionStatus === 'success' && (
                     <Alert className="mt-3 border-green-500/50 bg-green-500/10">
                       <CheckCircle className="h-4 w-4" />
                       <AlertDescription>Connection successful! Claude API is ready.</AlertDescription>
                     </Alert>
                   )}
-                  
+
                   {connectionStatus === 'error' && (
                     <Alert className="mt-3 border-red-500/50 bg-red-500/10">
                       <XCircle className="h-4 w-4" />
@@ -632,7 +632,7 @@ const Settings = () => {
                 {/* S2/S1 Ratio Thresholds */}
                 <div className="space-y-4">
                   <h4 className="font-medium">S2/S1 Ratio Thresholds</h4>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="wimp-s2s1">WIMP Max S2/S1</Label>
@@ -655,7 +655,7 @@ const Settings = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="background-s2s1-min">Background Min S2/S1</Label>
@@ -678,7 +678,7 @@ const Settings = () => {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="neutrino-s2s1">Neutrino Min S2/S1</Label>
                     <Input
@@ -816,8 +816,8 @@ const Settings = () => {
                             <Button size="sm" variant="outline" onClick={() => setSelectedPromptId(template.id)}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button 
-                              size="sm" 
+                            <Button
+                              size="sm"
                               variant="outline"
                               onClick={() => {
                                 setSettings(prev => ({
@@ -876,7 +876,7 @@ const Settings = () => {
                           </Button>
                         </div>
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <strong>Inputs:</strong>
@@ -895,7 +895,7 @@ const Settings = () => {
                           </div>
                         </div>
                       </div>
-                      
+
                       <div className="mt-3">
                         <strong>Reasoning:</strong>
                         <p className="text-sm text-muted-foreground mt-1">{example.reasoning}</p>
@@ -911,7 +911,7 @@ const Settings = () => {
                       <h3 className="text-lg font-semibold mb-4">
                         {editingExample ? 'Edit Example' : 'Add New Example'}
                       </h3>
-                      
+
                       <ExampleForm
                         example={editingExample}
                         onSave={(example) => {
