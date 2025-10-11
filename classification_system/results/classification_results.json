@@ -1,0 +1,47 @@
+[
+  {
+    "event_id": 1,
+    "true_label": "WIMP-like",
+    "classification": "WIMP-like (NR)",
+    "confidence": 0.95,
+    "s2_over_s1_ratio": 3.706549,
+    "recoil_energy_keV": 10.59068,
+    "explanation_file": "explanations\\event_1_explanation.md"
+  },
+  {
+    "event_id": 2,
+    "true_label": "Background",
+    "classification": "Background (ER)",
+    "confidence": 1.0,
+    "s2_over_s1_ratio": 12.809563,
+    "recoil_energy_keV": 2.012423,
+    "explanation_file": "explanations\\event_2_explanation.md"
+  },
+  {
+    "event_id": 3,
+    "true_label": "Background",
+    "classification": "Background (ER)",
+    "confidence": 0.95,
+    "s2_over_s1_ratio": 10.778812,
+    "recoil_energy_keV": 5.41238,
+    "explanation_file": "explanations\\event_3_explanation.md"
+  },
+  {
+    "event_id": 4,
+    "true_label": "Background",
+    "classification": "Background (ER)",
+    "confidence": 0.95,
+    "s2_over_s1_ratio": 16.257997,
+    "recoil_energy_keV": 6.863617,
+    "explanation_file": "explanations\\event_4_explanation.md"
+  },
+  {
+    "event_id": 5,
+    "true_label": "WIMP-like",
+    "classification": "WIMP-like (NR)",
+    "confidence": 0.95,
+    "s2_over_s1_ratio": 3.494597,
+    "recoil_energy_keV": 14.449227,
+    "explanation_file": "explanations\\event_5_explanation.md"
+  }
+]

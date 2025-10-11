@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 webapp_backend.py - Flask backend server for Dark Matter Classification webapp
 
@@ -7,11 +8,16 @@ classification logic with the React frontend webapp.
 """
 
 import os
+import sys
 import json
 import tempfile
 import asyncio
 from datetime import datetime
 from typing import Dict, List, Any, Optional
+
+# Disable emoji output to prevent Windows encoding issues
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 import pandas as pd
@@ -22,7 +28,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Import our classification modules
-import sys
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # We'll import the classification functions from mainClassify.py
@@ -43,9 +48,9 @@ try:
         detect_anomalies_advanced
     )
     ANOMALY_DETECTION_AVAILABLE = True
-    print("✅ Anomaly detection system imported successfully")
+    print("[OK] Anomaly detection system imported successfully")
 except ImportError as e:
-    print(f"⚠️  Warning: Could not import anomaly detection system: {e}")
+    print(f"[WARNING] Could not import anomaly detection system: {e}")
     ANOMALY_DETECTION_AVAILABLE = False
     # Create dummy functions
     def classify_event_with_claude(event_data):
@@ -1098,23 +1103,44 @@ def analyze_dataset_for_anomalies():
         }), 500
 
 if __name__ == '__main__':
-    print("🚀 Starting Dark Matter Classification Backend Server...")
-    print("📊 Webapp will connect to: http://localhost:5001")
-    print("🔬 API endpoints available:")
-    print("   GET  /api/health")
-    print("   POST /api/classify/single")
-    print("   POST /api/classify/batch")
-    print("   POST /api/classify/batch/process")
-    print("   GET  /api/dataset/load")
-    print("   GET  /api/dataset/statistics - NEW: Real-time statistics and analytics")
-    print("   POST /api/anomaly/detect")
-    print("   POST /api/anomaly/classify")
-    print("   POST /api/anomaly/analyze-dataset")
-    print("\n⚡ Server starting on port 5001...")
+    print("="*70)
+    print(" DARK MATTER CLASSIFICATION - BACKEND SERVER")
+    print("="*70)
+    print("\n[CONFIG] Server URL: http://localhost:5001")
+    print("[CONFIG] Claude API: Loaded from .env file")
+    print("[CONFIG] Anomaly Detection: Available" if ANOMALY_DETECTION_AVAILABLE else "[CONFIG] Anomaly Detection: Not Available")
+    print("\n[ENDPOINTS] Available API endpoints:")
+    print("  GET  /api/health")
+    print("  POST /api/classify/single")
+    print("  POST /api/classify/batch")
+    print("  POST /api/classify/batch/process")
+    print("  GET  /api/dataset/load")
+    print("  GET  /api/dataset/statistics")
+    print("  POST /api/anomaly/detect")
+    print("  POST /api/anomaly/classify")
+    print("  POST /api/anomaly/analyze-dataset")
+    print("\n" + "="*70)
     
-    app.run(
-        host='0.0.0.0',
-        port=5001,
-        debug=True,
-        threaded=True
-    )
+    # Get port from environment variable (for deployment) or use 5001 for local
+    port = int(os.environ.get('PORT', 5001))
+    host = '0.0.0.0'  # Bind to all interfaces for deployment
+    
+    print(f"[START] Initializing server on {host}:{port}...")
+    print("="*70 + "\n")
+    
+    try:
+        app.run(
+            host=host,
+            port=port,
+            debug=False,
+            use_reloader=False,
+            threaded=True
+        )
+    except KeyboardInterrupt:
+        print("\n\n[STOP] Server stopped by user (CTRL+C)")
+    except Exception as e:
+        print(f"\n[ERROR] Server failed to start: {e}")
+        import traceback
+        traceback.print_exc()
+        if os.environ.get('PORT'):  # Only pause if running locally
+            input("\nPress Enter to exit...")
