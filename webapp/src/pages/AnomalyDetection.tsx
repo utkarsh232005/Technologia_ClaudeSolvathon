@@ -12,6 +12,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     AlertTriangle,
     CheckCircle,
     Search,
@@ -31,6 +39,10 @@ const AnomalyDetection = () => {
     const [useClaudeAI, setUseClaudeAI] = useState(true); // Enable by default to use Claude extensively
     const [threshold, setThreshold] = useState(0.3);
     const [maxEvents, setMaxEvents] = useState(100);
+    
+    // Dialog state
+    const [showSampleDialog, setShowSampleDialog] = useState(false);
+    const [tempMaxEvents, setTempMaxEvents] = useState(100);
 
     // Single event input
     const [singleEvent, setSingleEvent] = useState({
@@ -40,14 +52,30 @@ const AnomalyDetection = () => {
         s2s1Ratio: ''
     });
 
-    // Analyze entire dataset
-    const handleAnalyzeDataset = async () => {
+    // Open sample selection dialog
+    const handleOpenSampleDialog = () => {
+        setTempMaxEvents(maxEvents);
+        setShowSampleDialog(true);
+    };
+
+    // Confirm and start analysis
+    const handleConfirmAnalysis = () => {
+        setMaxEvents(tempMaxEvents);
+        setShowSampleDialog(false);
+        // Start analysis immediately after dialog closes
+        setTimeout(() => {
+            performDatasetAnalysis(tempMaxEvents);
+        }, 100);
+    };
+
+    // Perform the actual dataset analysis
+    const performDatasetAnalysis = async (eventsToAnalyze: number) => {
         setIsAnalyzing(true);
         const toastId = showToast.loading('Analyzing dataset for anomalies...');
 
         try {
             const result = await anomalyAPI.analyzeDataset({
-                max_events: maxEvents,
+                max_events: eventsToAnalyze,
                 use_claude: useClaudeAI,
                 threshold: threshold
             });
@@ -64,6 +92,11 @@ const AnomalyDetection = () => {
             setIsAnalyzing(false);
             showToast.dismiss(toastId);
         }
+    };
+
+    // Analyze entire dataset (now opens dialog first)
+    const handleAnalyzeDataset = () => {
+        handleOpenSampleDialog();
     };
 
     // Analyze single event
@@ -133,7 +166,7 @@ const AnomalyDetection = () => {
                         <CardDescription>Configure anomaly detection parameters</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="threshold">Anomaly Threshold</Label>
                                 <Input
@@ -147,20 +180,6 @@ const AnomalyDetection = () => {
                                     className="bg-slate-900 border-slate-700"
                                 />
                                 <p className="text-xs text-slate-400">Minimum score to flag as anomaly (0.0 - 1.0)</p>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="maxEvents">Max Events to Analyze</Label>
-                                <Input
-                                    id="maxEvents"
-                                    type="number"
-                                    min="10"
-                                    max="1000"
-                                    value={maxEvents}
-                                    onChange={(e) => setMaxEvents(parseInt(e.target.value))}
-                                    className="bg-slate-900 border-slate-700"
-                                />
-                                <p className="text-xs text-slate-400">Limit for dataset analysis</p>
                             </div>
 
                             <div className="space-y-2">
@@ -179,6 +198,13 @@ const AnomalyDetection = () => {
                                 </div>
                                 <p className="text-xs text-slate-400">AI-powered classification and reasoning</p>
                             </div>
+                        </div>
+                        
+                        {/* Info box about sample selection */}
+                        <div className="mt-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
+                            <p className="text-sm text-cyan-300">
+                                💡 <strong>Tip:</strong> When you click "Start Analysis", you'll be asked to select how many events to analyze from the dataset.
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
@@ -657,6 +683,113 @@ const AnomalyDetection = () => {
                         </Card>
                     </TabsContent>
                 </Tabs>
+
+                {/* Sample Selection Dialog */}
+                <Dialog open={showSampleDialog} onOpenChange={setShowSampleDialog}>
+                    <DialogContent className="bg-slate-800 border-slate-700">
+                        <DialogHeader>
+                            <DialogTitle className="text-cyan-400 flex items-center gap-2">
+                                <Database className="h-5 w-5" />
+                                Select Sample Size
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-400">
+                                Choose how many events from the dataset you want to analyze for anomalies.
+                                More events = more comprehensive but slower analysis.
+                            </DialogDescription>
+                        </DialogHeader>
+                        
+                        <div className="space-y-4 py-4">
+                            <div className="space-y-3">
+                                <Label htmlFor="sample-size" className="text-white">
+                                    Number of Events to Analyze
+                                </Label>
+                                <Input
+                                    id="sample-size"
+                                    type="number"
+                                    min="10"
+                                    max="1000"
+                                    value={tempMaxEvents}
+                                    onChange={(e) => setTempMaxEvents(parseInt(e.target.value) || 10)}
+                                    className="bg-slate-900 border-slate-700 text-white"
+                                />
+                                <p className="text-xs text-slate-400">
+                                    Range: 10 - 1000 events
+                                </p>
+                            </div>
+
+                            {/* Quick Selection Buttons */}
+                            <div className="space-y-2">
+                                <Label className="text-slate-300 text-sm">Quick Select:</Label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {[50, 100, 200, 500].map((value) => (
+                                        <Button
+                                            key={value}
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setTempMaxEvents(value)}
+                                            className={`${
+                                                tempMaxEvents === value
+                                                    ? 'bg-cyan-600 border-cyan-500 text-white hover:bg-cyan-700'
+                                                    : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
+                                            }`}
+                                        >
+                                            {value}
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Estimation Info */}
+                            <div className="p-3 bg-slate-900/50 border border-slate-700 rounded-lg">
+                                <div className="text-sm space-y-1">
+                                    <p className="text-slate-300">
+                                        <span className="text-cyan-400 font-semibold">Estimated Time:</span>{' '}
+                                        {useClaudeAI ? (
+                                            <>
+                                                ~{Math.ceil(tempMaxEvents / 10)} minutes
+                                                <span className="text-xs text-slate-400 ml-2">(with Claude AI)</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                ~{Math.ceil(tempMaxEvents / 100)} seconds
+                                                <span className="text-xs text-slate-400 ml-2">(statistical only)</span>
+                                            </>
+                                        )}
+                                    </p>
+                                    <p className="text-slate-300">
+                                        <span className="text-cyan-400 font-semibold">Analysis Mode:</span>{' '}
+                                        {useClaudeAI ? (
+                                            <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/50">
+                                                AI-Powered
+                                            </Badge>
+                                        ) : (
+                                            <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/50">
+                                                Statistical
+                                            </Badge>
+                                        )}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <DialogFooter>
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowSampleDialog(false)}
+                                className="bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleConfirmAnalysis}
+                                className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+                            >
+                                <Search className="h-4 w-4 mr-2" />
+                                Start Analysis
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </PageLayout>
     );

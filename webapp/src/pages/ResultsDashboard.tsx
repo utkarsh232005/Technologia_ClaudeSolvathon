@@ -50,6 +50,51 @@ import {
   RotateCcw
 } from 'lucide-react';
 
+// Types for dataset statistics
+interface DatasetStatistics {
+  totalEvents: number;
+  classificationBreakdown: Record<string, number>;
+  energyStats: {
+    min: number;
+    max: number;
+    mean: number;
+    median: number;
+    std: number;
+  };
+  s2s1Stats: {
+    min: number;
+    max: number;
+    mean: number;
+    median: number;
+    std: number;
+  };
+  confidenceDistribution: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  energyDistribution: Array<{ range: string; count: number }>;
+  s2s1ByClassification: Record<string, {
+    mean: number;
+    std: number;
+    min: number;
+    max: number;
+  }>;
+  scatterData: Array<{
+    energy: number;
+    s2s1Ratio: number;
+    classification: string;
+    id: string;
+    s1: number;
+    s2: number;
+    confidence?: number;
+  }>;
+  dataSource?: 'analyzed' | 'raw' | 'mixed';
+  analyzedCount?: number;
+  rawCount?: number;
+  analysisTimestamp?: string;
+}
+
 // Mock data for demonstrations
 const mockEventData: EventData[] = [
   { id: 'EVT-001', energy: 12.5, s1: 45, s2: 320, s2s1Ratio: 7.11, type: 'WIMP', confidence: 87, timestamp: '2024-10-10T08:15:30Z' },
@@ -150,13 +195,17 @@ const ResultsDashboard = () => {
   // State for data loading
   const [isLoading, setIsLoading] = useState(true);
   const [eventData, setEventData] = useState<EventData[]>([]);
+  const [datasetStats, setDatasetStats] = useState<DatasetStatistics | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const [visibleTypes, setVisibleTypes] = useState<{ [key: string]: boolean }>({
     'Background': true,
     'WIMP': true,
+    'WIMP-like': true,
     'Axion': true,
     'Neutrino': true,
+    'Anomaly': true,
+    'Novel Anomaly': true,
   });
 
   const [severityFilter, setSeverityFilter] = useState<string>('all');
@@ -172,63 +221,50 @@ const ResultsDashboard = () => {
   // Fetch real data from backend on mount
   useEffect(() => {
     const fetchData = async () => {
-      console.log('🔄 Fetching dashboard data...');
+      console.log('🔄 Fetching real dataset statistics...');
       setIsLoading(true);
       setError(null);
 
       try {
-        // First check if backend is available
-        const backendAvailable = await ClassificationAPI.isBackendAvailable();
-        if (!backendAvailable) {
-          throw new Error('Backend server is not responding. Please start the backend with: python webapp_backend.py');
-        }
+        // Fetch comprehensive statistics from new endpoint
+        console.log('📊 Loading real dataset statistics...');
+        const response = await fetch('http://localhost:5001/api/dataset/statistics');
+        const result = await response.json();
 
-        // Load dataset
-        console.log('📊 Loading dataset...');
-        const datasetResult = await ClassificationAPI.loadDataset();
+        if (!result.success || !result.statistics) {
+          throw new Error(result.error || 'Failed to load dataset statistics');
+        } const stats = result.statistics;
+        console.log(`✅ Loaded statistics for ${stats.totalEvents} total events`);
+        console.log(`📈 Classification breakdown:`, stats.classificationBreakdown);
+        console.log(`🔬 Data source: ${stats.dataSource === 'analyzed' ? 'ANALYZED (Claude AI)' : 'RAW Dataset'}`);
 
-        if (!datasetResult.success || !datasetResult.dataset) {
-          throw new Error(datasetResult.error || 'Failed to load dataset');
-        }
+        setDatasetStats(stats);
 
-        const dataset = datasetResult.dataset;
-        console.log(`✅ Loaded ${dataset.totalEvents} events from dataset`);
-
-        // Transform dataset preview to EventData format
-        const transformedEvents: EventData[] = (dataset.preview || []).map((event: Record<string, unknown>, index: number) => ({
-          id: event.event_id as string || `EVT-${String(index + 1).padStart(3, '0')}`,
-          energy: Number(event.recoil_energy_keV || event.energy || 0),
-          s1: Number(event.s1_area_PE || event.s1 || 0),
-          s2: Number(event.s2_area_PE || event.s2 || 0),
-          s2s1Ratio: Number(event.s2_over_s1_ratio || ((event.s2 as number || 0) / (event.s1 as number || 1)) || 0),
-          type: (event.label as string || event.type as string || event.classification as string || 'Unknown'),
+        // Transform scatter data to EventData format for the table
+        const scatterData = stats.scatterData || [];
+        const transformedEvents: EventData[] = scatterData.map((event, index: number) => ({
+          id: String(event.id || `EVT-${index + 1}`),
+          energy: Number(event.energy || 0),
+          s1: Number(event.s1 || 0),
+          s2: Number(event.s2 || 0),
+          s2s1Ratio: Number(event.s2s1Ratio || 0),
+          type: event.classification || 'Unknown',
           confidence: Math.round((Number(event.confidence) || 0.85) * 100),
-          timestamp: event.timestamp as string || new Date().toISOString()
+          timestamp: event.timestamp || new Date().toISOString()
         }));
 
-        console.log(`✅ Transformed ${transformedEvents.length} events for display`);
+        console.log(`✅ Prepared ${transformedEvents.length} events for visualization`);
         setEventData(transformedEvents);
 
-        // Analyze for anomalies (optional, can be done in background)
-        console.log('🔍 Analyzing for anomalies...');
-        const anomalyResult = await anomalyAPI.analyzeDataset({
-          max_events: 50,
-          use_claude: false, // Set to false for faster initial load
-          threshold: 0.5
-        });
-
-        if (anomalyResult.success) {
-          console.log(`✅ Found ${anomalyResult.statistics.anomalies_detected} anomalies`);
-        }
-
-        showToast.success(`Loaded ${transformedEvents.length} events successfully`);
+        showToast.success(`Loaded real data: ${stats.totalEvents.toLocaleString()} total events`);
       } catch (err) {
         console.error('❌ Error loading dashboard data:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load data';
+        const errorMessage = err instanceof Error ? err.message : 'Failed to load data. Is the backend running?';
         setError(errorMessage);
         showToast.error(errorMessage);
         // Fallback to empty data
         setEventData([]);
+        setDatasetStats(null);
       } finally {
         setIsLoading(false);
       }
@@ -263,20 +299,41 @@ const ResultsDashboard = () => {
     setFullScreenChart(fullScreenChart === chartId ? null : chartId);
   };
 
-  // Calculate overview statistics
-  const totalEvents = mockEventData.length;
-  const classificationBreakdown = Object.entries(
-    mockEventData.reduce((acc, event) => {
-      acc[event.type] = (acc[event.type] || 0) + 1;
-      return acc;
-    }, {} as { [key: string]: number })
-  ).map(([name, value]) => ({ name, value, fill: classificationColors[name as keyof typeof classificationColors] }));
+  // Calculate overview statistics from real data
+  const totalEvents = datasetStats?.totalEvents || mockEventData.length;
 
-  const averageConfidence = Math.round(
-    mockEventData.reduce((sum, event) => sum + event.confidence, 0) / totalEvents
-  );
+  const classificationBreakdown = datasetStats?.classificationBreakdown
+    ? Object.entries(datasetStats.classificationBreakdown).map(([name, value]) => ({
+      name,
+      value: value as number,
+      fill: classificationColors[name as keyof typeof classificationColors] || '#64748b'
+    }))
+    : Object.entries(
+      mockEventData.reduce((acc, event) => {
+        acc[event.type] = (acc[event.type] || 0) + 1;
+        return acc;
+      }, {} as { [key: string]: number })
+    ).map(([name, value]) => ({
+      name,
+      value,
+      fill: classificationColors[name as keyof typeof classificationColors] || '#64748b'
+    }));
 
-  const anomalies = mockEventData.filter(event => event.confidence < 70).length;
+  const averageConfidence = datasetStats?.confidenceDistribution
+    ? Math.round(
+      ((datasetStats.confidenceDistribution.high * 90) +
+        (datasetStats.confidenceDistribution.medium * 65) +
+        (datasetStats.confidenceDistribution.low * 30)) /
+      (datasetStats.confidenceDistribution.high +
+        datasetStats.confidenceDistribution.medium +
+        datasetStats.confidenceDistribution.low || 1)
+    )
+    : Math.round(
+      mockEventData.reduce((sum, event) => sum + event.confidence, 0) / (totalEvents || 1)
+    );
+
+  const anomalies = datasetStats?.confidenceDistribution?.low
+    || mockEventData.filter(event => event.confidence < 70).length;
 
   // Filter and sort anomalies
   const filteredAnomalies = mockAnomalies
@@ -296,33 +353,56 @@ const ResultsDashboard = () => {
 
   const openAnomalies = mockAnomalies.filter(a => anomalyStatuses[a.id] === 'open').length;
 
-  // Confidence distribution data
-  const confidenceDistribution = [
-    {
-      range: 'High (>80%)',
-      count: mockEventData.filter(e => e.confidence > 80).length,
-      fill: '#10b981'
-    },
-    {
-      range: 'Medium (50-80%)',
-      count: mockEventData.filter(e => e.confidence >= 50 && e.confidence <= 80).length,
-      fill: '#f59e0b'
-    },
-    {
-      range: 'Low (<50%)',
-      count: mockEventData.filter(e => e.confidence < 50).length,
-      fill: '#ef4444'
-    },
-  ];
+  // Confidence distribution data - use real data if available
+  const confidenceDistribution = datasetStats?.confidenceDistribution
+    ? [
+      {
+        range: 'High (>80%)',
+        count: datasetStats.confidenceDistribution.high,
+        fill: '#10b981'
+      },
+      {
+        range: 'Medium (50-80%)',
+        count: datasetStats.confidenceDistribution.medium,
+        fill: '#f59e0b'
+      },
+      {
+        range: 'Low (<50%)',
+        count: datasetStats.confidenceDistribution.low,
+        fill: '#ef4444'
+      },
+    ]
+    : [
+      {
+        range: 'High (>80%)',
+        count: mockEventData.filter(e => e.confidence > 80).length,
+        fill: '#10b981'
+      },
+      {
+        range: 'Medium (50-80%)',
+        count: mockEventData.filter(e => e.confidence >= 50 && e.confidence <= 80).length,
+        fill: '#f59e0b'
+      },
+      {
+        range: 'Low (<50%)',
+        count: mockEventData.filter(e => e.confidence < 50).length,
+        fill: '#ef4444'
+      },
+    ];
 
-  // Filtered scatter plot data
-  const scatterData = mockEventData.filter(event => visibleTypes[event.type]).map(event => ({
-    energy: event.energy,
-    s2s1Ratio: event.s2s1Ratio,
-    classification: event.type,
-    id: event.id,
-    confidence: event.confidence
-  }));
+  // Filtered scatter plot data - use real scatter data if available
+  const scatterData = (datasetStats?.scatterData || mockEventData)
+    .filter((event) => {
+      const eventType = 'classification' in event ? event.classification : event.type;
+      return visibleTypes[eventType as string];
+    })
+    .map((event) => ({
+      energy: 'classification' in event ? event.energy : event.energy,
+      s2s1Ratio: 'classification' in event ? event.s2s1Ratio : event.s2s1Ratio,
+      classification: 'classification' in event ? event.classification : event.type,
+      id: String(event.id),
+      confidence: 'confidence' in event ? (event.confidence || 85) : event.confidence
+    }));
 
   const toggleType = (type: string) => {
     setVisibleTypes(prev => ({ ...prev, [type]: !prev[type] }));
@@ -384,10 +464,36 @@ const ResultsDashboard = () => {
       title="Results Dashboard"
       description="Visualize and analyze detection data with interactive insights"
     >
+      {/* Data source badge */}
+      {datasetStats && (
+        <div className="mb-4 flex items-center gap-2">
+          <Badge variant="outline" className="bg-green-500/10 text-green-400 border-green-500/50">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2" />
+            Live Data: {totalEvents.toLocaleString()} Events
+          </Badge>
+          {datasetStats.dataSource === 'analyzed' ? (
+            <Badge variant="outline" className="bg-purple-500/10 text-purple-400 border-purple-500/50">
+              🔬 AI-Analyzed Data (Claude)
+            </Badge>
+          ) : datasetStats.dataSource === 'mixed' ? (
+            <Badge variant="outline" className="bg-violet-500/10 text-violet-400 border-violet-500/50">
+              🔬 Mixed Data: {datasetStats.analyzedCount} AI + {datasetStats.rawCount} Raw
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/50">
+              📊 Raw Dataset
+            </Badge>
+          )}
+          <Badge variant="outline" className="bg-cyan-500/10 text-cyan-400 border-cyan-500/50">
+            Real-time Analysis
+          </Badge>
+        </div>
+      )}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
           <LoadingSpinner size="lg" />
-          <p className="text-slate-400">Loading dataset and analyzing events...</p>
+          <p className="text-slate-400">Loading real dataset statistics and analyzing events...</p>
+          <p className="text-slate-500 text-sm">Processing comprehensive data analysis from backend...</p>
         </div>
       ) : error ? (
         <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">

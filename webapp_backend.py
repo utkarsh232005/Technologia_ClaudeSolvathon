@@ -508,6 +508,294 @@ def load_dataset():
             'error': f'Failed to load dataset: {str(e)}'
         }), 500
 
+@app.route('/api/dataset/statistics', methods=['GET'])
+def get_dataset_statistics():
+    """
+    Get comprehensive statistics and analytics from the ANALYZED/CLASSIFIED real data
+    Prioritizes Claude-analyzed results over raw dataset
+    """
+    try:
+        # First, try to load the analyzed/classified results
+        classified_path = os.path.join('dataset', 'claude_classified_results_detailed.json')
+        
+        if os.path.exists(classified_path):
+            print("✅ Loading analyzed data from claude_classified_results_detailed.json")
+            with open(classified_path, 'r') as f:
+                classified_data = json.load(f)
+            
+            print(f"📊 Found {len(classified_data)} analyzed events")
+            
+            # If we have very few analyzed events, supplement with raw data for better visualization
+            if len(classified_data) < 50:
+                print(f"⚠️  Only {len(classified_data)} analyzed events, supplementing with raw data for better visualization")
+                csv_path = os.path.join('dataset', 'dark_matter_synthetic_dataset.csv')
+                if os.path.exists(csv_path):
+                    df_raw = pd.read_csv(csv_path)
+                    # Use analyzed data where available, raw data for the rest
+                    analyzed_ids = [item.get('event_id') for item in classified_data]
+                    
+                    # Check which column name is used in raw data for event IDs
+                    id_column = None
+                    for col in ['event_id', 'Event_ID', 'id', 'ID']:
+                        if col in df_raw.columns:
+                            id_column = col
+                            break
+                    
+                    # Filter out already analyzed events if we found the ID column
+                    if id_column:
+                        df_supplement = df_raw[~df_raw[id_column].isin(analyzed_ids)].head(500)
+                    else:
+                        # If no ID column found, just take first 500 events
+                        df_supplement = df_raw.head(500)
+                    
+                    # Convert analyzed data to DataFrame
+                    df_analyzed_data = []
+                    for item in classified_data:
+                        row = {
+                            'event_id': item.get('event_id'),
+                            'recoil_energy_keV': item.get('recoil_energy_keV'),
+                            's1_area_PE': item.get('s1_area_PE'),
+                            's2_area_PE': item.get('s2_area_PE'),
+                            's2_over_s1_ratio': item.get('s2_over_s1_ratio'),
+                            'label': item.get('api_analysis', {}).get('classification', item.get('label', 'Unknown')),
+                            'confidence': item.get('api_analysis', {}).get('confidence', 0.85),
+                            'position_x_mm': item.get('position_x_mm'),
+                            'position_y_mm': item.get('position_y_mm'),
+                            'position_z_mm': item.get('position_z_mm'),
+                            'drift_time_us': item.get('drift_time_us'),
+                            'timestamp': item.get('timestamp'),
+                            'is_analyzed': True
+                        }
+                        df_analyzed_data.append(row)
+                    
+                    # Add raw data (mark as not analyzed)
+                    # Handle both column naming conventions
+                    if 's1_area_PE' not in df_supplement.columns and 's1_light_yield' in df_supplement.columns:
+                        df_supplement['s1_area_PE'] = df_supplement['s1_light_yield']
+                    if 's2_area_PE' not in df_supplement.columns and 's2_charge_yield' in df_supplement.columns:
+                        df_supplement['s2_area_PE'] = df_supplement['s2_charge_yield']
+                    if 's2_over_s1_ratio' not in df_supplement.columns:
+                        df_supplement['s2_over_s1_ratio'] = df_supplement['s2_area_PE'] / df_supplement['s1_area_PE'].replace({0: np.nan})
+                    
+                    df_supplement['confidence'] = 0.85  # Default confidence for raw data
+                    df_supplement['is_analyzed'] = False
+                    
+                    # Combine
+                    df = pd.concat([pd.DataFrame(df_analyzed_data), df_supplement], ignore_index=True)
+                    print(f"✅ Combined dataset: {len(df_analyzed_data)} analyzed + {len(df_supplement)} raw = {len(df)} total events")
+                else:
+                    # Use only analyzed data
+                    df_data = []
+                    for item in classified_data:
+                        row = {
+                            'event_id': item.get('event_id'),
+                            'recoil_energy_keV': item.get('recoil_energy_keV'),
+                            's1_area_PE': item.get('s1_area_PE'),
+                            's2_area_PE': item.get('s2_area_PE'),
+                            's2_over_s1_ratio': item.get('s2_over_s1_ratio'),
+                            'label': item.get('api_analysis', {}).get('classification', item.get('label', 'Unknown')),
+                            'confidence': item.get('api_analysis', {}).get('confidence', 0.85),
+                            'position_x_mm': item.get('position_x_mm'),
+                            'position_y_mm': item.get('position_y_mm'),
+                            'position_z_mm': item.get('position_z_mm'),
+                            'drift_time_us': item.get('drift_time_us'),
+                            'timestamp': item.get('timestamp'),
+                            'is_analyzed': True
+                        }
+                        df_data.append(row)
+                    df = pd.DataFrame(df_data)
+            else:
+                # We have enough analyzed data
+                df_data = []
+                for item in classified_data:
+                    row = {
+                        'event_id': item.get('event_id'),
+                        'recoil_energy_keV': item.get('recoil_energy_keV'),
+                        's1_area_PE': item.get('s1_area_PE'),
+                        's2_area_PE': item.get('s2_area_PE'),
+                        's2_over_s1_ratio': item.get('s2_over_s1_ratio'),
+                        'label': item.get('api_analysis', {}).get('classification', item.get('label', 'Unknown')),
+                        'confidence': item.get('api_analysis', {}).get('confidence', 0.85),
+                        'position_x_mm': item.get('position_x_mm'),
+                        'position_y_mm': item.get('position_y_mm'),
+                        'position_z_mm': item.get('position_z_mm'),
+                        'drift_time_us': item.get('drift_time_us'),
+                        'timestamp': item.get('timestamp'),
+                        'is_analyzed': True
+                    }
+                    df_data.append(row)
+                
+                df = pd.DataFrame(df_data)
+            
+            print(f"✅ Loaded {len(df)} total events")
+        else:
+            # Fallback to raw dataset if analyzed data not available
+            print("⚠️  No analyzed data found, falling back to raw dataset")
+            csv_path = os.path.join('dataset', 'dark_matter_synthetic_dataset.csv')
+            
+            if not os.path.exists(csv_path):
+                return jsonify({'error': 'No dataset found. Please generate or analyze dataset first.'}), 404
+            
+            df = pd.read_csv(csv_path)
+            
+            # Handle column name variations
+            if 's1_area_PE' not in df.columns and 's1_light_yield' in df.columns:
+                df['s1_area_PE'] = df['s1_light_yield']
+            if 's2_area_PE' not in df.columns and 's2_charge_yield' in df.columns:
+                df['s2_area_PE'] = df['s2_charge_yield']
+            if 's2_over_s1_ratio' not in df.columns:
+                df['s2_over_s1_ratio'] = df['s2_area_PE'] / df['s1_area_PE'].replace({0: np.nan})
+            
+            df['confidence'] = 0.85  # Default confidence for raw data
+            df['is_analyzed'] = False
+            
+            classified_data = []
+            print(f"✅ Loaded {len(df)} raw events")
+        
+        # Calculate comprehensive statistics
+        stats = {
+            'totalEvents': len(df),
+            
+            # Classification breakdown
+            'classificationBreakdown': df['label'].value_counts().to_dict() if 'label' in df.columns else {},
+            
+            # Energy statistics
+            'energyStats': {
+                'min': float(df['recoil_energy_keV'].min()) if 'recoil_energy_keV' in df.columns else 0,
+                'max': float(df['recoil_energy_keV'].max()) if 'recoil_energy_keV' in df.columns else 0,
+                'mean': float(df['recoil_energy_keV'].mean()) if 'recoil_energy_keV' in df.columns else 0,
+                'median': float(df['recoil_energy_keV'].median()) if 'recoil_energy_keV' in df.columns else 0,
+                'std': float(df['recoil_energy_keV'].std()) if 'recoil_energy_keV' in df.columns else 0
+            },
+            
+            # S2/S1 Ratio statistics
+            's2s1Stats': {
+                'min': float(df['s2_over_s1_ratio'].min()) if 's2_over_s1_ratio' in df.columns else 0,
+                'max': float(df['s2_over_s1_ratio'].max()) if 's2_over_s1_ratio' in df.columns else 0,
+                'mean': float(df['s2_over_s1_ratio'].mean()) if 's2_over_s1_ratio' in df.columns else 0,
+                'median': float(df['s2_over_s1_ratio'].median()) if 's2_over_s1_ratio' in df.columns else 0,
+                'std': float(df['s2_over_s1_ratio'].std()) if 's2_over_s1_ratio' in df.columns else 0
+            },
+            
+            # Confidence distribution (if we have classified data)
+            'confidenceDistribution': {
+                'high': 0,
+                'medium': 0,
+                'low': 0
+            },
+            
+            # Energy distribution by bins
+            'energyDistribution': [],
+            
+            # S2/S1 by classification
+            's2s1ByClassification': {},
+            
+            # Time series data (if timestamp available)
+            'timeSeriesData': []
+        }
+        
+        print(f"📋 DataFrame columns: {df.columns.tolist()}")
+        
+        # Calculate confidence distribution from real analyzed data
+        if 'confidence' in df.columns:
+            # Use actual confidence values from analyzed data
+            high_conf = len(df[df['confidence'] > 0.8])
+            medium_conf = len(df[(df['confidence'] >= 0.5) & (df['confidence'] <= 0.8)])
+            low_conf = len(df[df['confidence'] < 0.5])
+            stats['confidenceDistribution'] = {
+                'high': high_conf,
+                'medium': medium_conf,
+                'low': low_conf
+            }
+            print(f"📊 Confidence distribution: High={high_conf}, Medium={medium_conf}, Low={low_conf}")
+        elif classified_data:
+            # Fallback: calculate from classified_data if not in DataFrame
+            for item in classified_data:
+                confidence = item.get('api_analysis', {}).get('confidence', 0.85)
+                if confidence > 0.8:
+                    stats['confidenceDistribution']['high'] += 1
+                elif confidence >= 0.5:
+                    stats['confidenceDistribution']['medium'] += 1
+                else:
+                    stats['confidenceDistribution']['low'] += 1
+        
+        # Calculate energy distribution
+        if 'recoil_energy_keV' in df.columns:
+            energy_bins = [0, 5, 10, 15, 20, 30, 50, 100, 500]
+            energy_labels = ['0-5', '5-10', '10-15', '15-20', '20-30', '30-50', '50-100', '100+']
+            df['energy_bin'] = pd.cut(df['recoil_energy_keV'], bins=energy_bins, labels=energy_labels, include_lowest=True)
+            energy_dist = df['energy_bin'].value_counts().sort_index().to_dict()
+            stats['energyDistribution'] = [
+                {'range': str(k), 'count': int(v)} for k, v in energy_dist.items()
+            ]
+        
+        # Calculate S2/S1 by classification
+        if 'label' in df.columns and 's2_over_s1_ratio' in df.columns:
+            for label in df['label'].unique():
+                label_data = df[df['label'] == label]['s2_over_s1_ratio']
+                stats['s2s1ByClassification'][label] = {
+                    'mean': float(label_data.mean()),
+                    'std': float(label_data.std()),
+                    'min': float(label_data.min()),
+                    'max': float(label_data.max())
+                }
+        
+        # Sample events for scatter plot (limit to 1000 for performance)
+        sample_size = min(1000, len(df))
+        sample_df = df.sample(n=sample_size, random_state=42) if len(df) > sample_size else df
+        
+        scatter_data = []
+        for _, row in sample_df.iterrows():
+            try:
+                scatter_data.append({
+                    'energy': float(row.get('recoil_energy_keV', 0)),
+                    's2s1Ratio': float(row.get('s2_over_s1_ratio', 0)),
+                    'classification': str(row.get('label', 'Unknown')),
+                    'id': str(row.get('event_id', row.name)),  # Use row index as fallback
+                    's1': float(row.get('s1_area_PE', 0)),
+                    's2': float(row.get('s2_area_PE', 0)),
+                    'confidence': float(row.get('confidence', 0.85))  # Include real confidence from analysis
+                })
+            except Exception as e:
+                print(f"Warning: Skipping row due to error: {e}")
+                continue
+        
+        stats['scatterData'] = scatter_data
+        
+        # Add metadata about data source
+        analyzed_count = len(df[df.get('is_analyzed', False)]) if 'is_analyzed' in df.columns else (len(classified_data) if classified_data else 0)
+        if analyzed_count > 0 and analyzed_count < len(df):
+            stats['dataSource'] = 'mixed'  # Mix of analyzed and raw data
+            stats['analyzedCount'] = analyzed_count
+            stats['rawCount'] = len(df) - analyzed_count
+        elif analyzed_count == len(df) and analyzed_count > 0:
+            stats['dataSource'] = 'analyzed'  # All analyzed
+        else:
+            stats['dataSource'] = 'raw'  # All raw
+        
+        stats['analysisTimestamp'] = datetime.now().isoformat()
+        
+        print(f"✅ Prepared statistics with {len(scatter_data)} scatter points from {stats['dataSource']} data")
+        if stats['dataSource'] == 'mixed':
+            print(f"   📊 {stats.get('analyzedCount', 0)} analyzed + {stats.get('rawCount', 0)} raw events")
+        
+        # Clean all NaN values
+        stats = clean_nan_values(stats)
+        
+        return jsonify({
+            'success': True,
+            'statistics': stats
+        })
+        
+    except Exception as e:
+        import traceback
+        print(f"Error getting statistics: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': f'Failed to get statistics: {str(e)}'
+        }), 500
+
 @app.route('/api/anomaly/detect', methods=['POST'])
 def detect_anomalies():
     """
@@ -614,6 +902,68 @@ def detect_anomalies():
             'details': error_trace if app.debug else None
         }), 500
 
+@app.route('/api/anomaly/classify', methods=['POST'])
+def classify_anomaly():
+    """
+    Classify a single anomalous event using Claude AI
+    """
+    try:
+        # Check if anomaly detection is available
+        if not ANOMALY_DETECTION_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'error': 'Anomaly detection system not available. Please ensure mainAnomalyDetection.py is accessible.'
+            }), 503
+        
+        data = request.json
+        
+        # Get event data
+        event = data.get('event', {})
+        if not event:
+            return jsonify({
+                'success': False,
+                'error': 'No event data provided'
+            }), 400
+        
+        print(f"Classifying anomalous event with Claude...")
+        
+        # Convert to proper format
+        event_data = {
+            'recoil_energy_keV': float(event.get('energy', event.get('recoil_energy_keV', 0))),
+            's2_over_s1_ratio': float(event.get('s2s1Ratio', event.get('s2_over_s1_ratio', 
+                event.get('s2', 0) / event.get('s1', 1) if event.get('s1', 1) != 0 else 0))),
+            's1_area_PE': float(event.get('s1', event.get('s1_area_PE', 0))),
+            's2_area_PE': float(event.get('s2', event.get('s2_area_PE', 0))),
+            'position_x_mm': float(event.get('position_x_mm', 0)),
+            'position_y_mm': float(event.get('position_y_mm', 0)),
+            'position_z_mm': float(event.get('position_z_mm', 0)),
+            'drift_time_us': float(event.get('drift_time_us', 400)),
+        }
+        
+        # Classify with Claude
+        result = classify_event_with_claude(event_data)
+        
+        print(f"Classification complete: {result.get('classification', 'Unknown')}")
+        
+        return jsonify({
+            'success': True,
+            'classification': result.get('classification', 'Unknown'),
+            'confidence': result.get('confidence', 0.0),
+            'reasoning': result.get('reasoning', ''),
+            'analysis': result
+        })
+        
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        print(f"Error classifying anomaly: {str(e)}")
+        print(error_trace)
+        return jsonify({
+            'success': False,
+            'error': f'Classification failed: {str(e)}',
+            'details': error_trace if app.debug else None
+        }), 500
+
 @app.route('/api/anomaly/analyze-dataset', methods=['POST'])
 def analyze_dataset_for_anomalies():
     """
@@ -695,11 +1045,13 @@ def analyze_dataset_for_anomalies():
             anomaly_score = float(row.get('Anomaly_Score', row.get('anomaly_score', 0)))
             severity = 'Critical' if anomaly_score > 0.7 else 'High' if anomaly_score > 0.5 else 'Medium'
             
-            # Helper function to safely convert values, handling NaN
+            # Helper function to safely convert values, handling NaN and None
             def safe_float(val, default=0.0):
+                if val is None:
+                    return default
                 try:
                     f = float(val)
-                    return None if (np.isnan(f) or np.isinf(f)) else f
+                    return default if (np.isnan(f) or np.isinf(f)) else f
                 except (ValueError, TypeError):
                     return default
             
@@ -715,7 +1067,7 @@ def analyze_dataset_for_anomalies():
                 'position_y': safe_float(row.get('Position_Y', row.get('position_y_mm', 0))),
                 'drift_time': safe_float(row.get('Drift_Time_us', row.get('drift_time_us', 0))),
                 'anomaly_flags': anomaly_flags,
-                'reasoning': str(row.get('AI_Reasoning', '')) if 'AI_Reasoning' in row else '',
+                'reasoning': str(row.get('AI_Reasoning', '')) if pd.notna(row.get('AI_Reasoning')) else '',
                 'num_flags': row.get('Num_Flags', len(anomaly_flags))
             }
             
@@ -754,6 +1106,7 @@ if __name__ == '__main__':
     print("   POST /api/classify/batch")
     print("   POST /api/classify/batch/process")
     print("   GET  /api/dataset/load")
+    print("   GET  /api/dataset/statistics - NEW: Real-time statistics and analytics")
     print("   POST /api/anomaly/detect")
     print("   POST /api/anomaly/classify")
     print("   POST /api/anomaly/analyze-dataset")
