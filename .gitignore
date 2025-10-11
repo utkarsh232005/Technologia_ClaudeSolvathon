@@ -1,325 +1,57 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloa# Data Science specific
-# Large datasets (but allow dataset folder to be tracked)
-# Note: Dataset folder files are now tracked for project sharing
-*.h5
-*.hdf5
-*.pkl
-*.pickle
-*.parquet
-*.feather
-
-# Allow dataset folder files to be tracked
-# dataset/ folder contents will be included in git
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
 *.egg-info/
-.installed.cfg
+.eggs/
+dist/
+build/
 *.egg
-MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-.pybuilder/
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
-
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
-
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
-
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/#use-with-ide
-.pdm.toml
-
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
+.venv/
 venv/
 ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
-
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be added to the global gitignore or merged into this project gitignore.  For a PyCharm
-#  project, it is also desirable to ignore cache and logs directory since they do not
-#  contain any source code.
-.idea/
-
-# VS Code
-.vscode/
-*.code-workspace
-
-# Data Science specific
-# Large datasets
-# *.csv
-*.h5
-*.hdf5
-*.pkl
-*.pickle
-*.parquet
-*.feather
-
-# Jupyter notebook outputs
-*.ipynb
-
-# Model files
-*.model
-*.pkl
-*.joblib
-*.h5
-*.hdf5
-*.pb
-*.onnx
-
-# Plots and figures
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-*.pdf
-*.eps
-
-# Log files
-*.log
-logs/
-
-# Temporary files
-*.tmp
-*.temp
-.DS_Store
-Thumbs.db
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Machine learning experiment tracking
-mlruns/
-.mlflow/
-wandb/
-.neptune/
-
-# Configuration files with secrets
-config.ini
-secrets.json
-.secrets
-
-# Node.js and NPM
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-# Package manager lock files (optional - uncomment if you want to ignore them)
-# package-lock.json
-# yarn.lock
-# pnpm-lock.yaml
-# bun.lockb
-
-# Build outputs
-dist/
-build/
-out/
-.next/
-.nuxt/
-.cache/
-.parcel-cache/
 
 # Environment variables
 .env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
-# Editor directories and files
+# IDE
 .vscode/
-!.vscode/extensions.json
 .idea/
 *.swp
 *.swo
 *~
 
-# React/Vite specific
-.vite/
-dist-ssr/
-*.local
+# OS
+.DS_Store
+Thumbs.db
 
-# Storybook
-.storybook/
-storybook-static/
+# Logs
+*.log
+logs/
 
-# TypeScript
-*.tsbuildinfo
+# Temporary files
+temp_uploads/
+*.tmp
+*.bak
 
-# ESLint cache
-.eslintcache
+# Node.js (frontend)
+webapp/node_modules/
+webapp/dist/
+webapp/.vite/
+webapp/build/
 
-# Stylelint cache
-.stylelintcache
-
-# Prettier cache
-.prettierignore
-
-# Coverage directory used by tools like istanbul
+# Test outputs
+test_output/
 coverage/
-*.lcov
 
-# Dependency directories
-jspm_packages/
+# Large data files (optional - dataset is tracked)
+*.h5
+*.hdf5
+*.pkl
 
-# Optional npm cache directory
-.npm
+# Jupyter
+.ipynb_checkpoints/
 
-# Optional eslint cache
-.eslintcache
-
-# Microbundle cache
-.rpt2_cache/
-.rts2_cache_cjs/
-.rts2_cache_es/
-.rts2_cache_umd/
-
-# Optional REPL history
-.node_repl_history
-
-# Output of 'npm pack'
-*.tgz
-
-# Yarn Integrity file
-.yarn-integrity
-
-# Project specific
-main.py
+# Documentation build
+docs/_build/
