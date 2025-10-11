@@ -39,7 +39,7 @@ const AnomalyDetection = () => {
     const [useClaudeAI, setUseClaudeAI] = useState(true); // Enable by default to use Claude extensively
     const [threshold, setThreshold] = useState(0.3);
     const [maxEvents, setMaxEvents] = useState(100);
-    
+
     // Dialog state
     const [showSampleDialog, setShowSampleDialog] = useState(false);
     const [tempMaxEvents, setTempMaxEvents] = useState(100);
@@ -199,7 +199,7 @@ const AnomalyDetection = () => {
                                 <p className="text-xs text-slate-400">AI-powered classification and reasoning</p>
                             </div>
                         </div>
-                        
+
                         {/* Info box about sample selection */}
                         <div className="mt-4 p-3 bg-cyan-500/10 border border-cyan-500/30 rounded-lg">
                             <p className="text-sm text-cyan-300">
@@ -697,7 +697,7 @@ const AnomalyDetection = () => {
                                 More events = more comprehensive but slower analysis.
                             </DialogDescription>
                         </DialogHeader>
-                        
+
                         <div className="space-y-4 py-4">
                             <div className="space-y-3">
                                 <Label htmlFor="sample-size" className="text-white">
@@ -727,11 +727,10 @@ const AnomalyDetection = () => {
                                             variant="outline"
                                             size="sm"
                                             onClick={() => setTempMaxEvents(value)}
-                                            className={`${
-                                                tempMaxEvents === value
+                                            className={`${tempMaxEvents === value
                                                     ? 'bg-cyan-600 border-cyan-500 text-white hover:bg-cyan-700'
                                                     : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-600'
-                                            }`}
+                                                }`}
                                         >
                                             {value}
                                         </Button>
