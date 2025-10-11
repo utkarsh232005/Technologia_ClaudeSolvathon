@@ -4,7 +4,8 @@
  */
 
 // API Configuration
-const API_BASE_URL = '/api';
+// Use environment variable for production, fallback to local development
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
 
 // API Response Types
 export interface ClassificationResult {
