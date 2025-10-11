@@ -3,6 +3,7 @@ import PageLayout from '@/components/PageLayout';
 import { LoadingSpinner, ProgressBar } from '@/components/LoadingComponents';
 import { showToast } from '@/lib/toast';
 import ClassificationAPI, { ClassificationResult, BatchResult, FileUploadResult } from '@/lib/classificationAPI';
+import { TextShimmer } from '@/components/core/text-shimmer';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -653,7 +654,20 @@ const EventClassifier = () => {
                 <CardDescription>AI analysis and confidence assessment</CardDescription>
               </CardHeader>
               <CardContent>
-                {!isClassified ? (
+                {isClassifying ? (
+                  <div className="flex items-center justify-center h-96">
+                    <div className="text-center space-y-4">
+                      <Brain className="w-16 h-16 mx-auto mb-4 text-primary animate-pulse" />
+                      <TextShimmer
+                        duration={1.2}
+                        className='text-xl font-medium [--base-color:var(--color-blue-600)] [--base-gradient-color:var(--color-blue-200)] dark:[--base-color:var(--color-blue-700)] dark:[--base-gradient-color:var(--color-blue-400)]'
+                      >
+                        Analyzing event with AI...
+                      </TextShimmer>
+                      <p className="text-sm text-muted-foreground">Please wait while we classify your event</p>
+                    </div>
+                  </div>
+                ) : !isClassified ? (
                   <div className="flex items-center justify-center h-96 text-muted-foreground">
                     <div className="text-center">
                       <Brain className="w-16 h-16 mx-auto mb-4 opacity-50" />
@@ -991,7 +1005,12 @@ const EventClassifier = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Brain className="w-5 h-5 animate-pulse" />
-                    Processing Events
+                    <TextShimmer
+                      duration={1.2}
+                      className='text-lg font-medium [--base-color:var(--color-blue-600)] [--base-gradient-color:var(--color-blue-200)] dark:[--base-color:var(--color-blue-700)] dark:[--base-gradient-color:var(--color-blue-400)]'
+                    >
+                      Processing Events
+                    </TextShimmer>
                   </CardTitle>
                   <CardDescription>
                     AI classification in progress...

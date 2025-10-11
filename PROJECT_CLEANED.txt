@@ -1,0 +1,85 @@
+# Project Cleanup Summary
+
+## Files and Folders Removed ✅
+
+### Documentation Files (Markdown)
+- ❌ `3D_PLOT_FIX.md` - Technical documentation (removed)
+- ❌ `IMPLEMENTATION_SUMMARY.md` - Implementation guide (removed)
+
+### Empty Directories
+- ❌ `anomaly_reports/` - Empty folder (removed)
+- ❌ `results/` - Empty folder (removed)
+- ❌ `temp_uploads/` - Empty temporary upload folder (removed)
+
+### Cache Directories
+- ❌ `__pycache__/` - Python bytecode cache (removed)
+
+## Final Project Structure ✨
+
+```
+IIIT Hackathon/
+├── .env                          # Environment variables (local config)
+├── .env.example                  # Environment template
+├── .git/                         # Git repository
+├── .gitignore                    # Git ignore rules
+├── .venv/                        # Python virtual environment
+├── anomaly_detection_system/     # Anomaly detection logic
+├── dataset/                      # Dark matter detection data
+├── mainClassify.py              # Main classification script
+├── requirements.txt             # Python dependencies
+├── start_webapp.sh              # Startup script
+├── webapp/                      # React frontend application
+└── webapp_backend.py            # Flask backend API
+```
+
+## Production-Ready Structure ✅
+
+The project now contains only:
+- ✅ **Core backend files** (Python scripts, Flask API)
+- ✅ **Frontend application** (React + Vite + TypeScript)
+- ✅ **Dataset files** (JSON data for dark matter events)
+- ✅ **Configuration files** (.env, requirements.txt)
+- ✅ **Development tools** (.git, .venv, .gitignore)
+
+All unnecessary documentation, empty folders, and cache files have been removed!
+
+## What Was Preserved
+
+### Backend Core
+- `webapp_backend.py` - Flask API server
+- `mainClassify.py` - Event classification logic
+- `anomaly_detection_system/` - Anomaly detection algorithms
+- `requirements.txt` - Python package dependencies
+
+### Frontend App
+- `webapp/` - Complete React application with:
+  - TypeScript components
+  - Matplotlib-style charts
+  - 3D visualizations
+  - UI components library
+  - All dependencies in node_modules
+
+### Data
+- `dataset/` - Dark matter event data files
+
+### Configuration
+- `.env` & `.env.example` - Environment configuration
+- `.gitignore` - Git ignore rules
+- `start_webapp.sh` - Quick startup script
+
+## Next Steps
+
+To run the cleaned project:
+
+1. **Start Backend:**
+   ```bash
+   python webapp_backend.py
+   ```
+
+2. **Start Frontend:**
+   ```bash
+   cd webapp
+   npm run dev
+   ```
+
+The application is now production-ready with a clean, organized structure! 🚀

@@ -47,7 +47,8 @@ import {
   BarChart3,
   Box,
   Star,
-  RotateCcw
+  RotateCcw,
+  Activity
 } from 'lucide-react';
 
 // Types for dataset statistics
@@ -1163,7 +1164,308 @@ const ResultsDashboard = () => {
             </Card>
           </div>
 
-          {/* Feature Space Explorer */}
+          {/* Matplotlib-Style Scientific Charts Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Energy Distribution Histogram - Matplotlib Style */}
+            <Card className="chart-card relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900/50 via-blue-900/20 to-slate-900/50"></div>
+              <CardHeader className="flex flex-row items-center justify-between relative z-10">
+                <div>
+                  <CardTitle className="section-heading text-base font-mono">
+                    <BarChart3 className="icon" />
+                    Energy Distribution Histogram
+                  </CardTitle>
+                  <CardDescription className="text-slate-400 text-xs font-mono">matplotlib-style visualization</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportChart('energy-histogram')}
+                  className="border-slate-600 hover:bg-slate-700"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="h-80 bg-white/5 border border-slate-700 rounded-lg p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={datasetStats?.energyDistribution || []}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                    >
+                      <defs>
+                        <linearGradient id="energyBar" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.8} />
+                          <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.6} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="none"
+                        stroke="#475569"
+                        strokeWidth={0.5}
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="range"
+                        stroke="#94a3b8"
+                        fontSize={11}
+                        fontFamily="monospace"
+                        tick={{ fill: '#cbd5e1' }}
+                        label={{
+                          value: 'Energy (keV)',
+                          position: 'bottom',
+                          offset: 0,
+                          style: { fill: '#cbd5e1', fontFamily: 'monospace', fontSize: 11 }
+                        }}
+                      />
+                      <YAxis
+                        stroke="#94a3b8"
+                        fontSize={11}
+                        fontFamily="monospace"
+                        tick={{ fill: '#cbd5e1' }}
+                        label={{
+                          value: 'Frequency',
+                          angle: -90,
+                          position: 'insideLeft',
+                          style: { fill: '#cbd5e1', fontFamily: 'monospace', fontSize: 11 }
+                        }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1e293b',
+                          border: '1px solid #475569',
+                          borderRadius: '4px',
+                          fontFamily: 'monospace',
+                          fontSize: '11px'
+                        }}
+                        cursor={{ fill: 'rgba(59, 130, 246, 0.1)' }}
+                      />
+                      <Bar
+                        dataKey="count"
+                        fill="url(#energyBar)"
+                        radius={[0, 0, 0, 0]}
+                        stroke="#3b82f6"
+                        strokeWidth={1}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* S2/S1 Ratio vs Energy - Scatter with Trend Lines (Matplotlib Style) */}
+            <Card className="chart-card relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900/50 via-purple-900/20 to-slate-900/50"></div>
+              <CardHeader className="flex flex-row items-center justify-between relative z-10">
+                <div>
+                  <CardTitle className="section-heading text-base font-mono">
+                    <Grid3X3 className="icon" />
+                    S2/S1 vs Energy Scatter Plot
+                  </CardTitle>
+                  <CardDescription className="text-slate-400 text-xs font-mono">with classification markers</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportChart('s2s1-scatter')}
+                  className="border-slate-600 hover:bg-slate-700"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="h-80 bg-white/5 border border-slate-700 rounded-lg p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ScatterChart margin={{ top: 20, right: 30, left: 20, bottom: 40 }}>
+                      <CartesianGrid
+                        strokeDasharray="none"
+                        stroke="#475569"
+                        strokeWidth={0.5}
+                      />
+                      <XAxis
+                        dataKey="energy"
+                        type="number"
+                        stroke="#94a3b8"
+                        fontSize={11}
+                        fontFamily="monospace"
+                        tick={{ fill: '#cbd5e1' }}
+                        label={{
+                          value: 'Recoil Energy (keV)',
+                          position: 'bottom',
+                          offset: 0,
+                          style: { fill: '#cbd5e1', fontFamily: 'monospace', fontSize: 11 }
+                        }}
+                      />
+                      <YAxis
+                        dataKey="s2s1Ratio"
+                        type="number"
+                        stroke="#94a3b8"
+                        fontSize={11}
+                        fontFamily="monospace"
+                        tick={{ fill: '#cbd5e1' }}
+                        label={{
+                          value: 'S2/S1 Ratio',
+                          angle: -90,
+                          position: 'insideLeft',
+                          style: { fill: '#cbd5e1', fontFamily: 'monospace', fontSize: 11 }
+                        }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1e293b',
+                          border: '1px solid #475569',
+                          borderRadius: '4px',
+                          fontFamily: 'monospace',
+                          fontSize: '11px'
+                        }}
+                        cursor={{ strokeDasharray: '3 3' }}
+                        formatter={(value: number) => value.toFixed(2)}
+                        labelFormatter={(label) => `Energy: ${Number(label).toFixed(2)} keV`}
+                      />
+                      <Legend
+                        wrapperStyle={{
+                          fontFamily: 'monospace',
+                          fontSize: '10px'
+                        }}
+                        iconType="circle"
+                      />
+                      {/* Scatter points grouped by classification */}
+                      {Object.entries(classificationColors).map(([type, color]) => {
+                        const filteredData = (datasetStats?.scatterData || [])
+                          .filter(d => d.classification === type && visibleTypes[type]);
+                        return filteredData.length > 0 ? (
+                          <Scatter
+                            key={type}
+                            name={type}
+                            data={filteredData}
+                            fill={color}
+                            fillOpacity={0.6}
+                            stroke={color}
+                            strokeWidth={1}
+                            shape="circle"
+                          />
+                        ) : null;
+                      })}
+                    </ScatterChart>
+                  </ResponsiveContainer>
+
+                  {/* Trend lines - Mocked for demonstration */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <svg width="100%" height="100%" className="opacity-30">
+                      <line x1="20%" y1="80%" x2="80%" y2="20%" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 2" />
+                      <line x1="20%" y1="20%" x2="80%" y2="80%" stroke="#ef4444" strokeWidth={2} strokeDasharray="4 2" />
+                    </svg>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Time Series / Cumulative Distribution - Matplotlib Style */}
+          <div className="mb-8">
+            <Card className="chart-card relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-900/50 via-cyan-900/20 to-slate-900/50"></div>
+              <CardHeader className="flex flex-row items-center justify-between relative z-10">
+                <div>
+                  <CardTitle className="section-heading text-base font-mono">
+                    <Activity className="icon" />
+                    Classification Confidence Trend
+                  </CardTitle>
+                  <CardDescription className="text-slate-400 text-xs font-mono">cumulative distribution function (CDF)</CardDescription>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => exportChart('confidence-cdf')}
+                  className="border-slate-600 hover:bg-slate-700"
+                >
+                  <Download className="w-4 h-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="relative z-10">
+                <div className="h-96 bg-white/5 border border-slate-700 rounded-lg p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart
+                      data={[
+                        { confidence: 0, cumulative: 0 },
+                        { confidence: 20, cumulative: datasetStats?.confidenceDistribution?.low || 0 },
+                        { confidence: 40, cumulative: (datasetStats?.confidenceDistribution?.low || 0) + ((datasetStats?.confidenceDistribution?.medium || 0) * 0.3) },
+                        { confidence: 60, cumulative: (datasetStats?.confidenceDistribution?.low || 0) + ((datasetStats?.confidenceDistribution?.medium || 0) * 0.7) },
+                        { confidence: 80, cumulative: (datasetStats?.confidenceDistribution?.low || 0) + (datasetStats?.confidenceDistribution?.medium || 0) },
+                        { confidence: 90, cumulative: (datasetStats?.confidenceDistribution?.low || 0) + (datasetStats?.confidenceDistribution?.medium || 0) + ((datasetStats?.confidenceDistribution?.high || 0) * 0.5) },
+                        { confidence: 100, cumulative: (datasetStats?.confidenceDistribution?.low || 0) + (datasetStats?.confidenceDistribution?.medium || 0) + (datasetStats?.confidenceDistribution?.high || 0) }
+                      ]}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 40 }}
+                    >
+                      <CartesianGrid
+                        strokeDasharray="none"
+                        stroke="#475569"
+                        strokeWidth={0.5}
+                      />
+                      <XAxis
+                        dataKey="confidence"
+                        stroke="#94a3b8"
+                        fontSize={11}
+                        fontFamily="monospace"
+                        tick={{ fill: '#cbd5e1' }}
+                        domain={[0, 100]}
+                        label={{
+                          value: 'Confidence Score (%)',
+                          position: 'bottom',
+                          offset: 0,
+                          style: { fill: '#cbd5e1', fontFamily: 'monospace', fontSize: 11 }
+                        }}
+                      />
+                      <YAxis
+                        stroke="#94a3b8"
+                        fontSize={11}
+                        fontFamily="monospace"
+                        tick={{ fill: '#cbd5e1' }}
+                        label={{
+                          value: 'Cumulative Events',
+                          angle: -90,
+                          position: 'insideLeft',
+                          style: { fill: '#cbd5e1', fontFamily: 'monospace', fontSize: 11 }
+                        }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1e293b',
+                          border: '1px solid #475569',
+                          borderRadius: '4px',
+                          fontFamily: 'monospace',
+                          fontSize: '11px'
+                        }}
+                      />
+                      <ReferenceLine
+                        x={50}
+                        stroke="#fbbf24"
+                        strokeDasharray="3 3"
+                        strokeWidth={1}
+                        label={{
+                          value: 'Threshold',
+                          position: 'top',
+                          fill: '#fbbf24',
+                          fontFamily: 'monospace',
+                          fontSize: 10
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="cumulative"
+                        stroke="#22d3ee"
+                        strokeWidth={2}
+                        dot={{ fill: '#22d3ee', strokeWidth: 2, r: 3, stroke: '#1e293b' }}
+                        activeDot={{ r: 5, fill: '#22d3ee', stroke: '#fff', strokeWidth: 2 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Feature Space Explorer - KEEPING THE EXISTING 3D GRAPH */}
           <div className="mt-8">
             <Card className="chart-card">
               <CardHeader>
@@ -1222,31 +1524,122 @@ const ResultsDashboard = () => {
                   >
                     <Plot
                       data={[
+                        // WIMP Candidates
                         {
-                          x: mockEventData.map(d => d.energy),
-                          y: mockEventData.map(d => d.s1),
-                          z: plot3DMode === '3d' ? mockEventData.map(d => d.s2) : undefined,
+                          x: mockEventData.filter(d => d.type === 'WIMP' || d.type === 'WIMP-like').map(d => d.energy),
+                          y: mockEventData.filter(d => d.type === 'WIMP' || d.type === 'WIMP-like').map(d => d.s1),
+                          z: plot3DMode === '3d' ? mockEventData.filter(d => d.type === 'WIMP' || d.type === 'WIMP-like').map(d => d.s2) : undefined,
                           mode: 'markers',
                           type: plot3DMode === '3d' ? 'scatter3d' : 'scatter',
                           marker: {
                             size: 8,
-                            color: mockEventData.map(d =>
-                              d.type === 'WIMP' ? '#3b82f6' :
-                                d.type === 'Neutrino' ? '#ef4444' : '#10b981'
-                            ),
+                            color: '#3b82f6',
                             opacity: 0.8,
                             line: {
                               color: '#ffffff',
                               width: 1
                             }
                           },
-                          text: mockEventData.map(d =>
-                            `Event ${d.id}<br>Type: ${d.type}<br>Confidence: ${d.confidence}%`
+                          text: mockEventData.filter(d => d.type === 'WIMP' || d.type === 'WIMP-like').map(d =>
+                            `Event ${d.id}<br>Type: ${d.type}<br>Energy: ${d.energy} keV<br>S1: ${d.s1}<br>S2: ${d.s2}<br>Confidence: ${d.confidence}%`
                           ),
                           hovertemplate: '%{text}<extra></extra>',
-                          name: 'Events'
+                          name: 'WIMP Candidates',
+                          showlegend: true
+                        },
+                        // Neutrino Events
+                        {
+                          x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.energy),
+                          y: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.s1),
+                          z: plot3DMode === '3d' ? mockEventData.filter(d => d.type === 'Neutrino').map(d => d.s2) : undefined,
+                          mode: 'markers',
+                          type: plot3DMode === '3d' ? 'scatter3d' : 'scatter',
+                          marker: {
+                            size: 8,
+                            color: '#ef4444',
+                            opacity: 0.8,
+                            line: {
+                              color: '#ffffff',
+                              width: 1
+                            }
+                          },
+                          text: mockEventData.filter(d => d.type === 'Neutrino').map(d =>
+                            `Event ${d.id}<br>Type: ${d.type}<br>Energy: ${d.energy} keV<br>S1: ${d.s1}<br>S2: ${d.s2}<br>Confidence: ${d.confidence}%`
+                          ),
+                          hovertemplate: '%{text}<extra></extra>',
+                          name: 'Neutrino Events',
+                          showlegend: true
+                        },
+                        // Background Events
+                        {
+                          x: mockEventData.filter(d => d.type === 'Background').map(d => d.energy),
+                          y: mockEventData.filter(d => d.type === 'Background').map(d => d.s1),
+                          z: plot3DMode === '3d' ? mockEventData.filter(d => d.type === 'Background').map(d => d.s2) : undefined,
+                          mode: 'markers',
+                          type: plot3DMode === '3d' ? 'scatter3d' : 'scatter',
+                          marker: {
+                            size: 8,
+                            color: '#10b981',
+                            opacity: 0.8,
+                            line: {
+                              color: '#ffffff',
+                              width: 1
+                            }
+                          },
+                          text: mockEventData.filter(d => d.type === 'Background').map(d =>
+                            `Event ${d.id}<br>Type: ${d.type}<br>Energy: ${d.energy} keV<br>S1: ${d.s1}<br>S2: ${d.s2}<br>Confidence: ${d.confidence}%`
+                          ),
+                          hovertemplate: '%{text}<extra></extra>',
+                          name: 'Background',
+                          showlegend: true
+                        },
+                        // Axion Events
+                        {
+                          x: mockEventData.filter(d => d.type === 'Axion').map(d => d.energy),
+                          y: mockEventData.filter(d => d.type === 'Axion').map(d => d.s1),
+                          z: plot3DMode === '3d' ? mockEventData.filter(d => d.type === 'Axion').map(d => d.s2) : undefined,
+                          mode: 'markers',
+                          type: plot3DMode === '3d' ? 'scatter3d' : 'scatter',
+                          marker: {
+                            size: 8,
+                            color: '#8b5cf6',
+                            opacity: 0.8,
+                            line: {
+                              color: '#ffffff',
+                              width: 1
+                            }
+                          },
+                          text: mockEventData.filter(d => d.type === 'Axion').map(d =>
+                            `Event ${d.id}<br>Type: ${d.type}<br>Energy: ${d.energy} keV<br>S1: ${d.s1}<br>S2: ${d.s2}<br>Confidence: ${d.confidence}%`
+                          ),
+                          hovertemplate: '%{text}<extra></extra>',
+                          name: 'Axion',
+                          showlegend: true
+                        },
+                        // Anomaly Events
+                        {
+                          x: mockEventData.filter(d => d.type === 'Anomaly' || d.type === 'Novel Anomaly').map(d => d.energy),
+                          y: mockEventData.filter(d => d.type === 'Anomaly' || d.type === 'Novel Anomaly').map(d => d.s1),
+                          z: plot3DMode === '3d' ? mockEventData.filter(d => d.type === 'Anomaly' || d.type === 'Novel Anomaly').map(d => d.s2) : undefined,
+                          mode: 'markers',
+                          type: plot3DMode === '3d' ? 'scatter3d' : 'scatter',
+                          marker: {
+                            size: 8,
+                            color: '#f59e0b',
+                            opacity: 0.8,
+                            line: {
+                              color: '#ffffff',
+                              width: 1
+                            }
+                          },
+                          text: mockEventData.filter(d => d.type === 'Anomaly' || d.type === 'Novel Anomaly').map(d =>
+                            `Event ${d.id}<br>Type: ${d.type}<br>Energy: ${d.energy} keV<br>S1: ${d.s1}<br>S2: ${d.s2}<br>Confidence: ${d.confidence}%`
+                          ),
+                          hovertemplate: '%{text}<extra></extra>',
+                          name: 'Anomaly',
+                          showlegend: true
                         }
-                      ]}
+                      ].filter(trace => trace.x.length > 0)}
                       layout={{
                         paper_bgcolor: 'transparent',
                         plot_bgcolor: 'transparent',
@@ -1303,550 +1696,26 @@ const ResultsDashboard = () => {
                   </div>
 
                   {/* Legend */}
-                  <div className="flex justify-center gap-6 text-sm">
+                  <div className="flex justify-center flex-wrap gap-6 text-sm">
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-blue-500 shadow-lg"></div>
                       <span className="text-slate-300">WIMP Candidates</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-red-500 shadow-lg"></div>
-                      <span className="text-slate-300">Neutron Events</span>
+                      <span className="text-slate-300">Neutrino Events</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-3 h-3 rounded-full bg-green-500 shadow-lg"></div>
                       <span className="text-slate-300">Background</span>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Timeline View */}
-          <div className="mt-8">
-            <Card className="chart-card relative overflow-hidden">
-              {/* Animated background gradient */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-pink-900/20 to-red-900/20 animate-pulse" style={{ animationDuration: '5s' }}></div>
-              <CardHeader className="relative z-10">
-                <div className="flex justify-between items-center">
-                  <CardTitle className="section-heading">
-                    <Clock className="icon text-purple-400 animate-pulse" />
-                    Timeline View
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => downloadChart('timeline', 'timeline-plot')}
-                      className="border-slate-600 hover:bg-slate-700 hover:border-purple-400 transition-all duration-300 hover:shadow-lg hover:shadow-purple-400/20"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleFullScreen('timeline')}
-                      className="border-slate-600 hover:bg-slate-700 hover:border-pink-400 transition-all duration-300 hover:shadow-lg hover:shadow-pink-400/20"
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="relative z-10">
-                <div className="space-y-4">
-                  {/* Timeline Controls */}
-                  <div className="flex items-center gap-4 mb-4">
-                    <span className="text-sm text-slate-300 font-medium">Time Range:</span>
-                    <div className="flex-1 px-4">
-                      <input
-                        type="range"
-                        min="0"
-                        max="100"
-                        value={timelineRange[0]}
-                        onChange={(e) => setTimelineRange([parseInt(e.target.value), timelineRange[1]])}
-                        className="w-full h-2 bg-slate-600 rounded-lg appearance-none cursor-pointer slider-thumb"
-                      />
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-purple-500 shadow-lg"></div>
+                      <span className="text-slate-300">Axion</span>
                     </div>
-                    <span className="text-xs text-slate-400 w-20 font-mono">
-                      {timelineRange[0]}% - {timelineRange[1]}%
-                    </span>
-                  </div>
-
-                  {/* Timeline Plot */}
-                  <div
-                    ref={(el) => chartRefs.current['timeline'] = el}
-                    className={`${fullScreenChart === 'timeline'
-                      ? 'fixed inset-0 z-50 bg-slate-900 p-8'
-                      : 'h-80'
-                      }`}
-                  >
-                    <Plot
-                      data={[
-                        {
-                          x: mockEventData.map(d => d.timestamp),
-                          y: mockEventData.map(d => d.confidence),
-                          mode: 'markers+lines',
-                          type: 'scatter',
-                          marker: {
-                            size: 10,
-                            color: mockEventData.map(d =>
-                              d.type === 'WIMP' ? '#3b82f6' :
-                                d.type === 'Neutrino' ? '#ef4444' : '#10b981'
-                            ),
-                            opacity: 0.8,
-                            line: {
-                              color: '#ffffff',
-                              width: 2
-                            }
-                          },
-                          line: {
-                            color: '#64748b',
-                            width: 1
-                          },
-                          text: mockEventData.map(d =>
-                            `Event ${d.id}<br>Time: ${new Date(d.timestamp || '').toLocaleTimeString()}<br>Type: ${d.type}<br>Confidence: ${d.confidence}%`
-                          ),
-                          hovertemplate: '%{text}<extra></extra>',
-                          name: 'Events'
-                        },
-                        // Anomaly highlights
-                        {
-                          x: mockEventData.filter(d => d.confidence < 70).map(d => d.timestamp),
-                          y: mockEventData.filter(d => d.confidence < 70).map(d => d.confidence),
-                          mode: 'markers',
-                          type: 'scatter',
-                          marker: {
-                            size: 15,
-                            color: 'transparent',
-                            line: {
-                              color: '#fbbf24',
-                              width: 3
-                            },
-                            symbol: 'circle-open'
-                          },
-                          text: mockEventData.filter(d => d.confidence < 70).map(d =>
-                            `ANOMALY: Event ${d.id}<br>Time: ${new Date(d.timestamp).toLocaleTimeString()}<br>Low confidence: ${d.confidence}%`
-                          ),
-                          hovertemplate: '%{text}<extra></extra>',
-                          name: 'Anomalies',
-                          showlegend: true
-                        }
-                      ]}
-                      layout={{
-                        paper_bgcolor: 'transparent',
-                        plot_bgcolor: 'transparent',
-                        font: { color: '#e2e8f0' },
-                        xaxis: {
-                          title: 'Time',
-                          gridcolor: '#475569',
-                          zerolinecolor: '#64748b',
-                          type: 'date'
-                        },
-                        yaxis: {
-                          title: 'Confidence Score (%)',
-                          gridcolor: '#475569',
-                          zerolinecolor: '#64748b',
-                          range: [0, 100]
-                        },
-                        margin: { t: 20, r: 20, b: 60, l: 60 },
-                        legend: {
-                          font: { color: '#e2e8f0' },
-                          x: 1,
-                          y: 1
-                        },
-                        shapes: [
-                          // Confidence threshold line
-                          {
-                            type: 'line',
-                            x0: mockEventData[0]?.timestamp,
-                            x1: mockEventData[mockEventData.length - 1]?.timestamp,
-                            y0: 70,
-                            y1: 70,
-                            line: {
-                              color: '#fbbf24',
-                              width: 2,
-                              dash: 'dash'
-                            }
-                          }
-                        ],
-                        annotations: [
-                          {
-                            x: mockEventData[Math.floor(mockEventData.length / 2)]?.timestamp,
-                            y: 72,
-                            text: 'Anomaly Threshold',
-                            showarrow: false,
-                            font: { color: '#fbbf24', size: 12 }
-                          }
-                        ]
-                      }}
-                      config={{
-                        displayModeBar: true,
-                        displaylogo: false,
-                        modeBarButtonsToRemove: ['pan2d', 'lasso2d']
-                      }}
-                      style={{
-                        width: '100%',
-                        height: fullScreenChart === 'timeline' ? 'calc(100vh - 200px)' : '100%'
-                      }}
-                    />
-                  </div>
-
-                  {/* Timeline Statistics */}
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div
-                      className="stat-card"
-                      style={{ animationDelay: '0.1s' }}
-                    >
-                      <div className="stat-number text-2xl">
-                        {mockEventData.filter(d => d.type === 'WIMP').length}
-                      </div>
-                      <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">WIMP Events</div>
-                    </div>
-                    <div
-                      className="stat-card"
-                      style={{ animationDelay: '0.25s' }}
-                    >
-                      <div className="stat-number text-2xl">
-                        {mockEventData.filter(d => d.confidence < 70).length}
-                      </div>
-                      <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">Low Confidence</div>
-                    </div>
-                    <div
-                      className="stat-card"
-                      style={{ animationDelay: '0.4s' }}
-                    >
-                      <div className="stat-number text-2xl">
-                        {(mockEventData.reduce((acc, d) => acc + d.confidence, 0) / mockEventData.length).toFixed(1)}%
-                      </div>
-                      <div className="text-xs text-slate-400 font-medium uppercase tracking-wide mt-2">Avg Confidence</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Distribution Histograms */}
-          <div className="mt-8">
-            <Card className="chart-card">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="section-heading">
-                    <BarChart3 className="icon text-green-400" />
-                    Feature Distributions
-                  </CardTitle>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => downloadChart('distributions', 'feature-distributions')}
-                      className="border-slate-600 hover:bg-slate-700"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => toggleFullScreen('distributions')}
-                      className="border-slate-600 hover:bg-slate-700"
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Energy Distribution */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-slate-300">Energy Distribution (keV)</h4>
-                    <div
-                      ref={(el) => chartRefs.current['energy-dist'] = el}
-                      className="h-64"
-                    >
-                      <Plot
-                        data={[
-                          {
-                            x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.energy),
-                            type: 'histogram',
-                            name: 'WIMP',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#22d3ee',
-                              line: { color: '#0891b2', width: 1 }
-                            },
-                            xbins: { size: 5 }
-                          },
-                          {
-                            x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.energy),
-                            type: 'histogram',
-                            name: 'Neutrino',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#a855f7',
-                              line: { color: '#9333ea', width: 1 }
-                            },
-                            xbins: { size: 5 }
-                          },
-                          {
-                            x: mockEventData.filter(d => d.type === 'Background').map(d => d.energy),
-                            type: 'histogram',
-                            name: 'Background',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#ef4444',
-                              line: { color: '#dc2626', width: 1 }
-                            },
-                            xbins: { size: 5 }
-                          }
-                        ]}
-                        layout={{
-                          paper_bgcolor: 'transparent',
-                          plot_bgcolor: 'transparent',
-                          font: { color: '#e2e8f0', size: 10 },
-                          xaxis: {
-                            title: 'Energy (keV)',
-                            gridcolor: 'rgba(51, 65, 85, 0.3)',
-                            zerolinecolor: '#64748b'
-                          },
-                          yaxis: {
-                            title: 'Count',
-                            gridcolor: 'rgba(51, 65, 85, 0.3)',
-                            zerolinecolor: '#64748b'
-                          },
-                          margin: { t: 20, r: 20, b: 40, l: 40 },
-                          legend: {
-                            font: { color: '#cbd5e1', size: 10 },
-                            x: 1, y: 1
-                          },
-                          barmode: 'overlay'
-                        }}
-                        config={{
-                          displayModeBar: false,
-                          displaylogo: false
-                        }}
-                        style={{ width: '100%', height: '100%' }}
-                      />
-                    </div>
-                    <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
-                      <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.energy, 0) / mockEventData.length).toFixed(1)} keV
-                    </div>
-                  </div>
-
-                  {/* S1 Distribution */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-slate-300">S1 Signal Distribution</h4>
-                    <div
-                      ref={(el) => chartRefs.current['s1-dist'] = el}
-                      className="h-64"
-                    >
-                      <Plot
-                        data={[
-                          {
-                            x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.s1),
-                            type: 'histogram',
-                            name: 'WIMP',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#3b82f6',
-                              line: { color: '#2563eb', width: 1 }
-                            },
-                            xbins: { size: 20 }
-                          },
-                          {
-                            x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.s1),
-                            type: 'histogram',
-                            name: 'Neutrino',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#a855f7',
-                              line: { color: '#9333ea', width: 1 }
-                            },
-                            xbins: { size: 20 }
-                          },
-                          {
-                            x: mockEventData.filter(d => d.type === 'Background').map(d => d.s1),
-                            type: 'histogram',
-                            name: 'Background',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#ef4444',
-                              line: { color: '#dc2626', width: 1 }
-                            },
-                            xbins: { size: 20 }
-                          }
-                        ]}
-                        layout={{
-                          paper_bgcolor: 'transparent',
-                          plot_bgcolor: 'transparent',
-                          font: { color: '#e2e8f0', size: 10 },
-                          xaxis: {
-                            title: 'S1 Signal',
-                            gridcolor: 'rgba(51, 65, 85, 0.3)',
-                            zerolinecolor: '#64748b'
-                          },
-                          yaxis: {
-                            title: 'Count',
-                            gridcolor: 'rgba(51, 65, 85, 0.3)',
-                            zerolinecolor: '#64748b'
-                          },
-                          margin: { t: 20, r: 20, b: 40, l: 40 },
-                          legend: {
-                            font: { color: '#cbd5e1', size: 10 },
-                            x: 1, y: 1
-                          },
-                          barmode: 'overlay'
-                        }}
-                        config={{
-                          displayModeBar: false,
-                          displaylogo: false
-                        }}
-                        style={{ width: '100%', height: '100%' }}
-                      />
-                    </div>
-                    <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
-                      <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.s1, 0) / mockEventData.length).toFixed(1)}
-                    </div>
-                  </div>
-
-                  {/* S2 Distribution */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold text-slate-300">S2 Signal Distribution</h4>
-                    <div
-                      ref={(el) => chartRefs.current['s2-dist'] = el}
-                      className="h-64"
-                    >
-                      <Plot
-                        data={[
-                          {
-                            x: mockEventData.filter(d => d.type === 'WIMP').map(d => d.s2),
-                            type: 'histogram',
-                            name: 'WIMP',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#3b82f6',
-                              line: { color: '#2563eb', width: 1 }
-                            },
-                            xbins: { size: 500 }
-                          },
-                          {
-                            x: mockEventData.filter(d => d.type === 'Neutrino').map(d => d.s2),
-                            type: 'histogram',
-                            name: 'Neutrino',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#a855f7',
-                              line: { color: '#9333ea', width: 1 }
-                            },
-                            xbins: { size: 500 }
-                          },
-                          {
-                            x: mockEventData.filter(d => d.type === 'Background').map(d => d.s2),
-                            type: 'histogram',
-                            name: 'Background',
-                            opacity: 0.8,
-                            marker: {
-                              color: '#ef4444',
-                              line: { color: '#dc2626', width: 1 }
-                            },
-                            xbins: { size: 500 }
-                          }
-                        ]}
-                        layout={{
-                          paper_bgcolor: 'transparent',
-                          plot_bgcolor: 'transparent',
-                          font: { color: '#e2e8f0', size: 10 },
-                          xaxis: {
-                            title: 'S2 Signal',
-                            gridcolor: 'rgba(51, 65, 85, 0.3)',
-                            zerolinecolor: '#64748b'
-                          },
-                          yaxis: {
-                            title: 'Count',
-                            gridcolor: 'rgba(51, 65, 85, 0.3)',
-                            zerolinecolor: '#64748b'
-                          },
-                          margin: { t: 20, r: 20, b: 40, l: 40 },
-                          legend: {
-                            font: { color: '#cbd5e1', size: 10 },
-                            x: 1, y: 1
-                          },
-                          barmode: 'overlay'
-                        }}
-                        config={{
-                          displayModeBar: false,
-                          displaylogo: false
-                        }}
-                        style={{ width: '100%', height: '100%' }}
-                      />
-                    </div>
-                    <div className="text-xs text-slate-400 text-center bg-slate-800/30 p-2 rounded">
-                      <span className="font-semibold">Mean:</span> {(mockEventData.reduce((acc, d) => acc + d.s2, 0) / mockEventData.length).toFixed(0)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Statistical Summary */}
-                <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
-                    <h5 className="text-sm font-semibold text-cyan-300 mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
-                      Energy Statistics
-                    </h5>
-                    <div className="space-y-2 text-xs text-slate-400">
-                      <div className="flex justify-between">
-                        <span>Min:</span>
-                        <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.energy)).toFixed(1)} keV</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Max:</span>
-                        <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.energy)).toFixed(1)} keV</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Std:</span>
-                        <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.energy - mockEventData.reduce((a, b) => a + b.energy, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(1)} keV</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
-                    <h5 className="text-sm font-semibold text-blue-300 mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                      S1 Statistics
-                    </h5>
-                    <div className="space-y-2 text-xs text-slate-400">
-                      <div className="flex justify-between">
-                        <span>Min:</span>
-                        <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.s1)).toFixed(1)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Max:</span>
-                        <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.s1)).toFixed(1)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Std:</span>
-                        <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.s1 - mockEventData.reduce((a, b) => a + b.s1, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(1)}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-slate-800/50 border border-slate-600 rounded-lg p-4 hover:bg-slate-700/50 transition-colors">
-                    <h5 className="text-sm font-semibold text-purple-300 mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 bg-purple-400 rounded-full"></div>
-                      S2 Statistics
-                    </h5>
-                    <div className="space-y-2 text-xs text-slate-400">
-                      <div className="flex justify-between">
-                        <span>Min:</span>
-                        <span className="font-mono text-white">{Math.min(...mockEventData.map(d => d.s2)).toFixed(0)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Max:</span>
-                        <span className="font-mono text-white">{Math.max(...mockEventData.map(d => d.s2)).toFixed(0)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Std:</span>
-                        <span className="font-mono text-white">{Math.sqrt(mockEventData.reduce((acc, d) => acc + Math.pow(d.s2 - mockEventData.reduce((a, b) => a + b.s2, 0) / mockEventData.length, 2), 0) / mockEventData.length).toFixed(0)}</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-amber-500 shadow-lg"></div>
+                      <span className="text-slate-300">Anomaly</span>
                     </div>
                   </div>
                 </div>
