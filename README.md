@@ -152,10 +152,6 @@ MIT License - Feel free to use and modify!
 
 ---
 
-## 👥 Author
-
-**Rishiraj Pathak**  
-GitHub: [@Rishiraj-Pathak-27](https://github.com/Rishiraj-Pathak-27)
 
 ---
 
