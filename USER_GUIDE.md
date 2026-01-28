@@ -1062,7 +1062,7 @@ We welcome your feedback!
 ### Version
 
 Current Version: 1.0.0
-Last Updated: January 2024
+Last Updated: January 2026
 
 ### Acknowledgments
 
